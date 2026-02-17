@@ -1,0 +1,37 @@
+[13:33:30.460] [INFO] storybook v10.2.8
+[13:33:32.963] [DEBUG] Getting package.json info for C:/Users/lemue/Documents/booking-app/package.json...
+[13:33:33.005] [WARN] Could not resolve addon "@storybook/addon-essentials", skipping. Is it installed?
+[13:33:33.025] [WARN] Could not resolve addon "@storybook/addon-interactions", skipping. Is it installed?
+[13:33:33.032] [ERROR] [38;2;241;97;97mSB_CORE-SERVER_0002 (CriticalPresetLoadError): Storybook failed to load the following preset: @storybook/nextjs/preset.
+
+Please check whether your setup is correct, the Storybook dependencies (and their peer dependencies) are installed correctly and there are no package version clashes.
+
+If you believe this is a bug, please open an issue on Github.
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@storybook/nextjs' imported from .\node_modules\storybook\dist\_node-chunks\chunk-C6KVY6VB.js
+    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:268:9)
+    at packageResolve (node:internal/modules/esm/resolve:768:81)
+    at moduleResolve (node:internal/modules/esm/resolve:854:18)
+    at defaultResolve (node:internal/modules/esm/resolve:984:11)
+    at nextResolve (node:internal/modules/esm/hooks:748:28)
+    at Hooks.resolve (node:internal/modules/esm/hooks:240:30)
+    at MessagePort.handleMessage (node:internal/modules/esm/worker:199:24)
+    at [nodejs.internal.kHybridDispatch] (node:internal/event_target:827:20)
+    at MessagePort.<anonymous> (node:internal/per_context/messageport:23:28)
+
+More info: 
+[39m
+    at loadPreset (file:///C:/Users/lemue/Documents/booking-app/node_modules/storybook/dist/_node-chunks/chunk-WF46L34H.js:10081:13)
+    at async Promise.all (index 0)
+    at async loadPresets (file:///C:/Users/lemue/Documents/booking-app/node_modules/storybook/dist/_node-chunks/chunk-WF46L34H.js:10090:73)
+    at async getPresets (file:///C:/Users/lemue/Documents/booking-app/node_modules/storybook/dist/_node-chunks/chunk-WF46L34H.js:10121:23)
+    at async buildDevStandalone (file:///C:/Users/lemue/Documents/booking-app/node_modules/storybook/dist/core-server/index.js:7532:17)
+    at async withTelemetry (file:///C:/Users/lemue/Documents/booking-app/node_modules/storybook/dist/_node-chunks/chunk-KIOKJLL5.js:218:12)
+    at async dev (file:///C:/Users/lemue/Documents/booking-app/node_modules/storybook/dist/bin/core.js:2734:3)
+    at async _Command.<anonymous> (file:///C:/Users/lemue/Documents/booking-app/node_modules/storybook/dist/bin/core.js:2803:92)
+[13:33:33.064] [WARN] Broken build, fix the error above.
+You may need to refresh the browser.
+[13:33:33.073] [WARN] Could not resolve addon "@storybook/addon-essentials", skipping. Is it installed?
+[13:33:33.076] [WARN] Could not resolve addon "@storybook/addon-interactions", skipping. Is it installed?
+[13:33:37.312] [PROMPT] Would you like to send anonymous crash reports to improve Storybook and fix bugs faster? {"choice":true}
+[13:33:37.315] [INFO] Storybook collects completely anonymous usage telemetry. We use it to shape Storybook's roadmap and prioritize features. You can learn more, including how to opt out, at https://storybook.js.org/telemetry

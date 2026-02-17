@@ -1,65 +1,220 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { DashboardHeader } from "./components/DashboardHeader";
+import { FiltersSection } from "./components/FiltersSection";
+import { FloorMap } from "./components/FloorMap";
+import { RoomModal } from "./components/RoomModal";
+import { StatsGrid } from "./components/StatsGrid";
+import { Timeline } from "./components/Timeline";
+import { Toast } from "./components/Toast";
+import {
+  buildTimeline,
+  diffDays,
+  formatDateInput,
+  formatDateTime,
+  type Room,
+  type RoomStatus,
+} from "./lib/roomData";
+import hutsData from "./lib/huts.json";
+
+interface FiltersState {
+  startDate: string;
+  endDate: string;
+  roomType: string;
+  status: string;
+}
 
 export default function Home() {
+  const initialHuts = useMemo(() => hutsData as Room[], []);
+  const [huts, setHuts] = useState<Room[]>(initialHuts);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [dateTime, setDateTime] = useState("");
+  const [toast, setToast] = useState<string | null>(null);
+  const [filters, setFilters] = useState<FiltersState>({
+    startDate: "",
+    endDate: "",
+    roomType: "all",
+    status: "all",
+  });
+  const [appliedFilters, setAppliedFilters] = useState<FiltersState>({
+    startDate: "",
+    endDate: "",
+    roomType: "all",
+    status: "all",
+  });
+
+  const filteredHuts = useMemo(() => {
+    let result = huts;
+
+    if (appliedFilters.roomType !== "all") {
+      result = result.filter((room) => room.type === appliedFilters.roomType);
+    }
+
+    if (appliedFilters.status !== "all") {
+      result = result.filter((room) => room.status === appliedFilters.status);
+    }
+
+    return result;
+  }, [huts, appliedFilters]);
+
+  const timelineRooms = useMemo(() => filteredHuts.slice(0, 10), [filteredHuts]);
+  const timeline = useMemo(() => buildTimeline(timelineRooms, 30), [timelineRooms]);
+
+  useEffect(() => {
+    const update = () => setDateTime(formatDateTime(new Date()));
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const today = new Date();
+    const end = new Date(today);
+    end.setDate(end.getDate() + 7);
+    setFilters((current) => ({
+      ...current,
+      startDate: formatDateInput(today),
+      endDate: formatDateInput(end),
+    }));
+    setAppliedFilters((current) => ({
+      ...current,
+      startDate: formatDateInput(today),
+      endDate: formatDateInput(end),
+    }));
+  }, []);
+
+  const stats = useMemo(() => {
+    const available = filteredHuts.filter((room) => room.status === "available").length;
+    const occupied = filteredHuts.filter((room) => room.status === "occupied").length;
+    const maintenance = filteredHuts.filter((room) => room.status === "maintenance").length;
+    const cleaning = filteredHuts.filter((room) => room.status === "cleaning").length;
+
+    return [
+      {
+        label: "Total Huts",
+        value: filteredHuts.length,
+        subtitle: `Across ${filteredHuts.length} huts`,
+        icon: "BLD",
+      },
+      {
+        label: "Available",
+        value: available,
+        subtitle: "Ready for guests",
+        icon: "OK",
+        accentColor: "var(--success)",
+      },
+      {
+        label: "Occupied",
+        value: occupied,
+        subtitle: "Currently in use",
+        icon: "IN",
+        accentColor: "var(--danger)",
+      },
+      {
+        label: "Maintenance",
+        value: maintenance,
+        subtitle: "Under service",
+        icon: "SV",
+        accentColor: "var(--warning)",
+      },
+      {
+        label: "Cleaning",
+        value: cleaning,
+        subtitle: "Preparing for guests",
+        icon: "CL",
+        accentColor: "var(--accent-cyan)",
+      },
+    ];
+  }, [filteredHuts]);
+
+  const handleUpdateStatus = (status: RoomStatus) => {
+    if (!selectedRoom) {
+      return;
+    }
+
+    setHuts((current) =>
+      current.map((room) => (room.number === selectedRoom.number ? { ...room, status } : room))
+    );
+    setSelectedRoom(null);
+    setToast(`Hut ${selectedRoom.number} updated to ${status.toUpperCase()}`);
+  };
+
+  const handleFilterChange = (field: keyof FiltersState, value: string) => {
+    setFilters((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    if (filters.startDate && filters.endDate) {
+      const days = diffDays(filters.startDate, filters.endDate);
+      setAppliedFilters(filters);
+
+      let nextCount = huts.length;
+      if (filters.roomType !== "all" || filters.status !== "all") {
+        nextCount = huts.filter((room) => {
+          const typeMatch = filters.roomType === "all" || room.type === filters.roomType;
+          const statusMatch = filters.status === "all" || room.status === filters.status;
+          return typeMatch && statusMatch;
+        }).length;
+      }
+
+      setToast(
+        `Filter applied: ${days} day(s) | Type: ${filters.roomType} | Status: ${filters.status} | ${nextCount} hut(s)`
+      );
+    }
+  };
+
+  const handleResetFilters = () => {
+    const today = new Date();
+    const end = new Date(today);
+    end.setDate(end.getDate() + 7);
+    setFilters({
+      startDate: formatDateInput(today),
+      endDate: formatDateInput(end),
+      roomType: "all",
+      status: "all",
+    });
+    setAppliedFilters({
+      startDate: formatDateInput(today),
+      endDate: formatDateInput(end),
+      roomType: "all",
+      status: "all",
+    });
+    setToast("Filters reset");
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="relative min-h-screen">
+      <div className="bg-pattern" />
+      <div className="relative z-10 mx-auto flex max-w-[1920px] flex-col gap-8 px-8 py-7">
+        <DashboardHeader
+          title="Hut Management System"
+          subtitle="Internal Operations Dashboard"
+          statusLabel="LIVE"
+          dateTime={dateTime}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+
+        <FiltersSection
+          startDate={filters.startDate}
+          endDate={filters.endDate}
+          roomType={filters.roomType}
+          status={filters.status}
+          onChange={handleFilterChange}
+          onApply={handleApplyFilters}
+          onReset={handleResetFilters}
+        />
+        <StatsGrid items={stats} />
+        <FloorMap huts={filteredHuts} onRoomClick={setSelectedRoom} />
+        <Timeline rooms={timelineRooms} days={30} timeline={timeline} />
+      </div>
+
+      <RoomModal
+        room={selectedRoom}
+        isOpen={Boolean(selectedRoom)}
+        onClose={() => setSelectedRoom(null)}
+        onUpdateStatus={handleUpdateStatus}
+      />
+      {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
     </div>
   );
 }
