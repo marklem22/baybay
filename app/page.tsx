@@ -8,7 +8,14 @@ import { RoomModal } from "./components/RoomModal";
 import { StatsGrid } from "./components/StatsGrid";
 import { Timeline } from "./components/Timeline";
 import { useAppState } from "./context/AppContext";
-import { formatDateInput, getStatusForDate, type Room, type RoomStatus } from "./lib/roomData";
+import {
+  formatDateInput,
+  getScheduleEntryForDate,
+  getStatusForDate,
+  type Room,
+  type RoomStatus,
+  type StatusEntry,
+} from "./lib/roomData";
 
 interface FiltersState {
   startDate: string;
@@ -37,6 +44,7 @@ export default function RoomsPage() {
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
   const [selectedDateRaw, setSelectedDateRaw] = useState<string | undefined>(undefined);
   const [selectedDayStatus, setSelectedDayStatus] = useState<RoomStatus | undefined>(undefined);
+  const [selectedDayEntry, setSelectedDayEntry] = useState<StatusEntry | null>(null);
   const [filters, setFilters] = useState<FiltersState>({
     startDate: "",
     endDate: "",
@@ -197,6 +205,7 @@ export default function RoomsPage() {
     setSelectedDate(undefined);
     setSelectedDateRaw(undefined);
     setSelectedDayStatus(undefined);
+    setSelectedDayEntry(null);
   };
 
   const handleTimelineRoomClick = (room: Room, dayIndex: number, status: RoomStatus) => {
@@ -215,6 +224,9 @@ export default function RoomsPage() {
     setSelectedRoom(room);
     setSelectedDate(dateStr);
     setSelectedDayStatus(status);
+    const roomSchedule = schedules[room.number] ?? [];
+    const dayEntry = getScheduleEntryForDate(roomSchedule, date);
+    setSelectedDayEntry(dayEntry);
   };
 
   return (
@@ -256,10 +268,12 @@ export default function RoomsPage() {
           setSelectedDate(undefined);
           setSelectedDateRaw(undefined);
           setSelectedDayStatus(undefined);
+          setSelectedDayEntry(null);
         }}
         selectedDate={selectedDate}
         selectedDateRaw={selectedDateRaw}
         selectedDayStatus={selectedDayStatus}
+        selectedDayEntry={selectedDayEntry}
         schedule={selectedRoom ? schedules[selectedRoom.number] ?? [] : []}
         onUpdateSchedule={handleUpdateSchedule}
       />

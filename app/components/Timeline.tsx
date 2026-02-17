@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getStatusForDate, type Room, type RoomStatus, type StatusEntry } from "../lib/roomData";
+import {
+  getScheduleEntryForDate,
+  getStatusForDate,
+  type Room,
+  type RoomStatus,
+  type StatusEntry,
+} from "../lib/roomData";
 
 interface TimelineProps {
   rooms: Room[];
@@ -147,10 +153,11 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
   const today = startOfDay(new Date());
   const { dates, startOffset } = buildWindowDates(windowMode, today, monthOffset, sevenDayOffset);
   const days = dates.length;
-  const roomColumnWidth = 80;
+  const roomColumnWidth = 96;
   const dayColumnMinWidth = windowMode === "seven_days" ? 46 : windowMode === "current_month" ? 36 : 32;
   const timelineMinWidth = roomColumnWidth + days * dayColumnMinWidth;
   const timelineGridTemplate = `${roomColumnWidth}px repeat(${days}, minmax(0, 1fr))`;
+  const stickyRoomColumnStyle = { minWidth: `${roomColumnWidth}px` };
 
   const handleWindowSelect = (nextMode: TimelineWindow) => {
     setWindowMode(nextMode);
@@ -263,7 +270,10 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
             className="grid"
             style={{ gridTemplateColumns: timelineGridTemplate }}
           >
-            <div />
+            <div
+              className="sticky left-0 z-30 border-b border-[var(--border)] bg-[var(--bg-secondary)]"
+              style={stickyRoomColumnStyle}
+            />
             {monthBreaks.map((mb, idx) => {
               const nextIdx = idx < monthBreaks.length - 1 ? monthBreaks[idx + 1].index : days;
               const span = nextIdx - mb.index;
@@ -284,7 +294,10 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
             className="grid gap-px overflow-hidden rounded-t-lg border border-[var(--border)] bg-[var(--border)]"
             style={{ gridTemplateColumns: timelineGridTemplate }}
           >
-            <div className="flex items-end bg-[var(--bg-secondary)] px-2 pb-1 pt-2 text-[0.6rem] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+            <div
+              className="sticky left-0 z-30 flex items-end bg-[var(--bg-secondary)] px-2 pb-1 pt-2 text-[0.6rem] font-medium uppercase tracking-wider text-[var(--text-muted)] shadow-[1px_0_0_0_var(--border)]"
+              style={stickyRoomColumnStyle}
+            >
               Room
             </div>
             {dates.map((date, index) => {
@@ -316,7 +329,10 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
                 className="grid gap-px"
                 style={{ gridTemplateColumns: timelineGridTemplate }}
               >
-                <div className="sticky left-0 z-10 flex items-center bg-[var(--bg-secondary)] px-2 py-0.5">
+                <div
+                  className="sticky left-0 z-20 flex items-center bg-[var(--bg-secondary)] px-2 py-0.5 shadow-[1px_0_0_0_var(--border)]"
+                  style={stickyRoomColumnStyle}
+                >
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs font-semibold text-[var(--text-primary)]">
                       #{room.number}
@@ -331,6 +347,10 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
                   const timelineDayOffset = startOffset + index;
                   const timelineArrayIndex = timelineDayOffset - timelineStartOffset;
                   const timelineStatus = timeline[room.number]?.[timelineArrayIndex];
+                  const scheduleEntry = getScheduleEntryForDate(
+                    schedules[room.number] ?? [],
+                    date,
+                  );
                   const scheduleStatus = getStatusForDate(
                     schedules[room.number] ?? [],
                     date,
@@ -341,6 +361,18 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
                   const isFlipping = flippingCells.has(cellKey);
                   const isHovered =
                     hoveredCell?.room === room.number && hoveredCell?.day === timelineDayOffset;
+                  const isNearStart = index < 2;
+                  const isNearEnd = index >= days - 2;
+                  const tooltipPositionClass = isNearStart
+                    ? "left-1 translate-x-0"
+                    : isNearEnd
+                      ? "right-1 left-auto translate-x-0"
+                      : "left-1/2 -translate-x-1/2";
+                  const tooltipArrowClass = isNearStart
+                    ? "left-4"
+                    : isNearEnd
+                      ? "right-4"
+                      : "left-1/2 -translate-x-1/2";
                   const dateStr = date.toLocaleDateString("en-US", {
                     weekday: "short",
                     month: "short",
@@ -356,6 +388,7 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
                         minHeight: "34px",
                         boxShadow: isHovered ? `inset 0 0 0 1px ${statusColor[status]}` : undefined,
                         perspective: "400px",
+                        zIndex: isHovered ? 40 : 1,
                       }}
                       onClick={() => onRoomClick(room, timelineDayOffset, status)}
                       onMouseEnter={() => setHoveredCell({ room: room.number, day: timelineDayOffset })}
@@ -363,7 +396,7 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
                     >
                       {isHovered && (
                         <div
-                          className="absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-2 shadow-lg"
+                          className={`absolute bottom-full z-50 mb-2 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-2 shadow-lg ${tooltipPositionClass}`}
                           style={{ whiteSpace: "nowrap", pointerEvents: "none" }}
                         >
                           <div className="text-xs font-semibold text-[var(--text-primary)]">
@@ -379,7 +412,17 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
                               {statusLabel[status]}
                             </span>
                           </div>
-                          <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[var(--bg-secondary)]" />
+                          {status === "occupied" && scheduleEntry?.bookedBy ? (
+                            <div className="mt-1 text-[0.65rem] text-[var(--text-secondary)]">
+                              Booked by{" "}
+                              <span className="font-semibold text-[var(--text-primary)]">
+                                {scheduleEntry.bookedBy}
+                              </span>
+                            </div>
+                          ) : null}
+                          <div
+                            className={`absolute top-full border-4 border-transparent border-t-[var(--bg-secondary)] ${tooltipArrowClass}`}
+                          />
                         </div>
                       )}
                     </div>

@@ -15,6 +15,14 @@ function isDateInput(value: unknown): value is string {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+function isBookerName(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value.trim().length > 0 &&
+    value.trim().length <= 120
+  );
+}
+
 function isStatusEntry(value: unknown): value is StatusEntry {
   if (!value || typeof value !== "object") {
     return false;
@@ -27,12 +35,23 @@ function isStatusEntry(value: unknown): value is StatusEntry {
     typeof entry.status === "string" &&
     allowedStatuses.includes(entry.status as RoomStatus) &&
     isDateInput(entry.startDate) &&
-    isDateInput(entry.endDate)
+    isDateInput(entry.endDate) &&
+    (entry.bookedBy === undefined || isBookerName(entry.bookedBy))
   );
 }
 
 function normalizeEntries(entries: StatusEntry[]): StatusEntry[] {
-  return [...entries].sort((a, b) => {
+  const sanitized = entries.map((entry) => {
+    const trimmedBooker = typeof entry.bookedBy === "string" ? entry.bookedBy.trim() : "";
+    return {
+      ...entry,
+      ...(entry.status === "occupied" && trimmedBooker.length > 0
+        ? { bookedBy: trimmedBooker }
+        : {}),
+    };
+  });
+
+  return [...sanitized].sort((a, b) => {
     const dateCompare = a.startDate.localeCompare(b.startDate);
     if (dateCompare !== 0) {
       return dateCompare;

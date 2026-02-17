@@ -91,7 +91,8 @@ function normalizeSchedulesMap(raw: unknown): Record<number, StatusEntry[]> {
         typeof parsed.id === "string" &&
         typeof parsed.status === "string" &&
         typeof parsed.startDate === "string" &&
-        typeof parsed.endDate === "string"
+        typeof parsed.endDate === "string" &&
+        (parsed.bookedBy === undefined || typeof parsed.bookedBy === "string")
       );
     });
   }

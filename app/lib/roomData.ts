@@ -22,6 +22,7 @@ export interface StatusEntry {
   status: RoomStatus;
   startDate: string; // YYYY-MM-DD
   endDate: string;   // YYYY-MM-DD
+  bookedBy?: string;
 }
 
 export type ActivityLogAction = "schedule_added" | "schedule_removed";
@@ -114,6 +115,24 @@ export function getStatusForDate(
     }
   }
   return defaultStatus;
+}
+
+/**
+ * Resolve the most recent schedule entry for a specific date.
+ * Later entries take priority. Returns null when no entry matches.
+ */
+export function getScheduleEntryForDate(
+  schedule: StatusEntry[],
+  date: Date,
+): StatusEntry | null {
+  const dateStr = formatDateInput(date);
+  for (let i = schedule.length - 1; i >= 0; i--) {
+    const entry = schedule[i];
+    if (dateStr >= entry.startDate && dateStr <= entry.endDate) {
+      return entry;
+    }
+  }
+  return null;
 }
 
 /**

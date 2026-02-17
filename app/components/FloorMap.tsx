@@ -29,7 +29,30 @@ const typeStyles: Record<Room["type"], { label: string; color: string; bg: strin
   },
 };
 
+interface FloorGroup {
+  id: string;
+  label: string;
+  rooms: Room[];
+}
+
+function resolveFloor(room: Room): number | null {
+  if (typeof room.floor === "number" && Number.isInteger(room.floor) && room.floor > 0) {
+    return room.floor;
+  }
+
+  // Fallback for common room numbering patterns like 203 -> Floor 2.
+  if (room.number >= 100) {
+    const inferred = Math.floor(room.number / 100);
+    if (inferred > 0) {
+      return inferred;
+    }
+  }
+
+  return null;
+}
+
 export function FloorMap({ huts, onRoomClick }: FloorMapProps) {
+  const sortedHuts = [...huts].sort((a, b) => a.number - b.number);
   const typeCounts = huts.reduce(
     (acc, room) => {
       acc[room.type] += 1;
@@ -42,6 +65,36 @@ export function FloorMap({ huts, onRoomClick }: FloorMapProps) {
       deluxe: 0,
     } as Record<Room["type"], number>,
   );
+  const grouped = sortedHuts.reduce(
+    (acc, room) => {
+      const floor = resolveFloor(room);
+      if (floor === null) {
+        acc.unassigned.push(room);
+      } else {
+        const current = acc.byFloor.get(floor) ?? [];
+        current.push(room);
+        acc.byFloor.set(floor, current);
+      }
+      return acc;
+    },
+    { byFloor: new Map<number, Room[]>(), unassigned: [] as Room[] },
+  );
+
+  const floorGroups: FloorGroup[] = Array.from(grouped.byFloor.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([floor, rooms]) => ({
+      id: `floor-${floor}`,
+      label: `Floor ${floor}`,
+      rooms,
+    }));
+
+  if (grouped.unassigned.length > 0) {
+    floorGroups.push({
+      id: "unassigned",
+      label: "Unassigned Floor",
+      rooms: grouped.unassigned,
+    });
+  }
 
   return (
     <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-6">
@@ -76,28 +129,44 @@ export function FloorMap({ huts, onRoomClick }: FloorMapProps) {
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] gap-2">
-          {huts.map((room) => (
-            <button
-              key={room.number}
-              type="button"
-              onClick={() => onRoomClick(room)}
-              className="flex aspect-square flex-col items-center justify-center rounded-lg border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-              style={{
-                borderColor: typeStyles[room.type].color,
-                backgroundColor: typeStyles[room.type].bg,
-              }}
-            >
-              <span className="font-mono text-base font-semibold">{room.number}</span>
-              {room.name ? (
-                <span className="max-w-[70px] truncate text-[0.55rem] font-medium text-[var(--text-primary)]">
-                  {room.name}
+
+        <div className="flex flex-col gap-4">
+          {floorGroups.map((group) => (
+            <div key={group.id} className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] p-3">
+              <div className="mb-3 flex items-center justify-between border-b border-[var(--border)] pb-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-primary)]">
+                  {group.label}
+                </h3>
+                <span className="font-mono text-[0.72rem] text-[var(--text-secondary)]">
+                  {group.rooms.length} room{group.rooms.length === 1 ? "" : "s"}
                 </span>
-              ) : null}
-              <span className="text-[0.6rem] font-medium uppercase text-[var(--text-muted)]">
-                {room.type}
-              </span>
-            </button>
+              </div>
+
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] gap-2">
+                {group.rooms.map((room) => (
+                  <button
+                    key={room.number}
+                    type="button"
+                    onClick={() => onRoomClick(room)}
+                    className="flex aspect-square flex-col items-center justify-center rounded-lg border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                    style={{
+                      borderColor: typeStyles[room.type].color,
+                      backgroundColor: typeStyles[room.type].bg,
+                    }}
+                  >
+                    <span className="font-mono text-base font-semibold">{room.number}</span>
+                    {room.name ? (
+                      <span className="max-w-[70px] truncate text-[0.55rem] font-medium text-[var(--text-primary)]">
+                        {room.name}
+                      </span>
+                    ) : null}
+                    <span className="text-[0.6rem] font-medium uppercase text-[var(--text-muted)]">
+                      {room.type}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </div>

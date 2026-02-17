@@ -18,7 +18,7 @@ export function FiltersSection({
   onReset,
 }: FiltersSectionProps) {
   const inputClass =
-    "rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 text-sm text-[var(--text-primary)] transition focus:border-[var(--accent-blue)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-blue)]/20";
+    "h-[38px] min-h-[38px] rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 text-sm text-[var(--text-primary)] transition focus:border-[var(--accent-blue)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-blue)]/20";
 
   return (
     <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-5">
@@ -82,14 +82,14 @@ export function FiltersSection({
         </div>
         <div className="flex gap-2">
           <button
-            className="rounded-lg bg-[var(--accent-blue)] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+            className="h-[38px] min-h-[38px] rounded-lg bg-[var(--accent-blue)] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
             onClick={onApply}
             type="button"
           >
             Apply
           </button>
           <button
-            className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
+            className="h-[38px] min-h-[38px] rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
             onClick={onReset}
             type="button"
           >

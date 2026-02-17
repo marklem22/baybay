@@ -122,7 +122,7 @@ export function Sidebar({ activePage, theme, onToggleTheme }: SidebarProps) {
       )}
 
       <aside
-        className={`fixed top-0 left-0 z-50 flex h-screen flex-col border-r border-[var(--border)] bg-[var(--bg-secondary)] transition-all duration-300 md:sticky md:translate-x-0 print:hidden ${
+        className={`fixed top-0 left-0 z-50 flex h-screen flex-col border-r border-[var(--border)] bg-[var(--bg-secondary)] transition-all duration-300 md:!sticky md:top-0 md:z-30 md:shrink-0 md:translate-x-0 print:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         } ${
           collapsed ? "w-[72px]" : "w-[220px]"
