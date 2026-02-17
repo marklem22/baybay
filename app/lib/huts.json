@@ -1,22 +1,86 @@
 [
-  { "number": 1, "type": "single", "status": "available", "capacity": 1, "zone": "North" },
-  { "number": 2, "type": "double", "status": "occupied", "capacity": 2, "zone": "North" },
-  { "number": 3, "type": "suite", "status": "maintenance", "capacity": 3, "zone": "North" },
-  { "number": 4, "type": "deluxe", "status": "cleaning", "capacity": 4, "zone": "North" },
-  { "number": 5, "type": "single", "status": "available", "capacity": 1, "zone": "North" },
-  { "number": 6, "type": "double", "status": "occupied", "capacity": 2, "zone": "East" },
-  { "number": 7, "type": "suite", "status": "available", "capacity": 3, "zone": "East" },
-  { "number": 8, "type": "deluxe", "status": "available", "capacity": 4, "zone": "East" },
-  { "number": 9, "type": "single", "status": "cleaning", "capacity": 1, "zone": "East" },
-  { "number": 10, "type": "double", "status": "maintenance", "capacity": 2, "zone": "East" },
-  { "number": 11, "type": "suite", "status": "occupied", "capacity": 3, "zone": "South" },
-  { "number": 12, "type": "deluxe", "status": "available", "capacity": 4, "zone": "South" },
-  { "number": 13, "type": "single", "status": "available", "capacity": 1, "zone": "South" },
-  { "number": 14, "type": "double", "status": "cleaning", "capacity": 2, "zone": "South" },
-  { "number": 15, "type": "suite", "status": "occupied", "capacity": 3, "zone": "South" },
-  { "number": 16, "type": "deluxe", "status": "available", "capacity": 4, "zone": "West" },
-  { "number": 17, "type": "single", "status": "maintenance", "capacity": 1, "zone": "West" },
-  { "number": 18, "type": "double", "status": "available", "capacity": 2, "zone": "West" },
-  { "number": 19, "type": "suite", "status": "occupied", "capacity": 3, "zone": "West" },
-  { "number": 20, "type": "deluxe", "status": "available", "capacity": 4, "zone": "West" }
+  {
+    "number": 1,
+    "type": "single",
+    "status": "available",
+    "capacity": 1,
+    "zone": "North"
+  },
+  {
+    "number": 2,
+    "type": "double",
+    "status": "available",
+    "capacity": 2,
+    "zone": "North"
+  },
+  {
+    "number": 3,
+    "type": "suite",
+    "status": "available",
+    "capacity": 3,
+    "zone": "North"
+  },
+  {
+    "number": 4,
+    "type": "deluxe",
+    "status": "available",
+    "capacity": 4,
+    "zone": "North"
+  },
+  {
+    "number": 5,
+    "type": "single",
+    "status": "available",
+    "capacity": 1,
+    "zone": "East"
+  },
+  {
+    "number": 6,
+    "type": "double",
+    "status": "available",
+    "capacity": 2,
+    "zone": "East"
+  },
+  {
+    "number": 7,
+    "type": "suite",
+    "status": "available",
+    "capacity": 3,
+    "zone": "East"
+  },
+  {
+    "number": 8,
+    "type": "deluxe",
+    "status": "available",
+    "capacity": 4,
+    "zone": "South"
+  },
+  {
+    "number": 9,
+    "type": "single",
+    "status": "available",
+    "capacity": 1,
+    "zone": "South"
+  },
+  {
+    "number": 10,
+    "type": "double",
+    "status": "available",
+    "capacity": 2,
+    "zone": "South"
+  },
+  {
+    "number": 11,
+    "type": "suite",
+    "status": "available",
+    "capacity": 3,
+    "zone": "West"
+  },
+  {
+    "number": 12,
+    "type": "deluxe",
+    "status": "available",
+    "capacity": 4,
+    "zone": "West"
+  }
 ]

@@ -17,40 +17,43 @@ export function FiltersSection({
   onApply,
   onReset,
 }: FiltersSectionProps) {
+  const inputClass =
+    "rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 text-sm text-[var(--text-primary)] transition focus:border-[var(--accent-blue)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-blue)]/20";
+
   return (
-    <section className="rounded-[16px] border border-[var(--border)] bg-[var(--bg-secondary)] p-8">
-      <div className="mb-5 flex items-center gap-2 text-[1.1em] font-bold text-[var(--text-primary)]">
-        Date Range Filter
+    <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-5">
+      <div className="mb-4 text-sm font-medium text-[var(--text-primary)]">
+        Filters
       </div>
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] items-end gap-4">
-        <div className="flex flex-col gap-2">
-          <label className="text-[0.85em] font-semibold uppercase tracking-[0.5px] text-[var(--text-secondary)]">
-            Check-in Date
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] items-end gap-3">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-[var(--text-muted)]">
+            Check-in
           </label>
           <input
             type="date"
-            className="rounded-[12px] border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 font-mono text-[0.95em] text-[var(--text-primary)] transition focus:border-[var(--accent-blue)] focus:outline-none focus:ring-2 focus:ring-[rgba(59,130,246,0.1)]"
+            className={inputClass}
             value={startDate}
             onChange={(event) => onChange("startDate", event.target.value)}
           />
         </div>
-        <div className="flex flex-col gap-2">
-          <label className="text-[0.85em] font-semibold uppercase tracking-[0.5px] text-[var(--text-secondary)]">
-            Check-out Date
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-[var(--text-muted)]">
+            Check-out
           </label>
           <input
             type="date"
-            className="rounded-[12px] border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 font-mono text-[0.95em] text-[var(--text-primary)] transition focus:border-[var(--accent-blue)] focus:outline-none focus:ring-2 focus:ring-[rgba(59,130,246,0.1)]"
+            className={inputClass}
             value={endDate}
             onChange={(event) => onChange("endDate", event.target.value)}
           />
         </div>
-        <div className="flex flex-col gap-2">
-          <label className="text-[0.85em] font-semibold uppercase tracking-[0.5px] text-[var(--text-secondary)]">
-            Hut Type
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-[var(--text-muted)]">
+            Room Type
           </label>
           <select
-            className="cursor-pointer rounded-[12px] border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 font-mono text-[0.95em] text-[var(--text-primary)] transition focus:border-[var(--accent-blue)] focus:outline-none focus:ring-2 focus:ring-[rgba(59,130,246,0.1)]"
+            className={`cursor-pointer ${inputClass}`}
             value={roomType}
             onChange={(event) => onChange("roomType", event.target.value)}
           >
@@ -61,12 +64,12 @@ export function FiltersSection({
             <option value="deluxe">Deluxe</option>
           </select>
         </div>
-        <div className="flex flex-col gap-2">
-          <label className="text-[0.85em] font-semibold uppercase tracking-[0.5px] text-[var(--text-secondary)]">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-[var(--text-muted)]">
             Status
           </label>
           <select
-            className="cursor-pointer rounded-[12px] border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 font-mono text-[0.95em] text-[var(--text-primary)] transition focus:border-[var(--accent-blue)] focus:outline-none focus:ring-2 focus:ring-[rgba(59,130,246,0.1)]"
+            className={`cursor-pointer ${inputClass}`}
             value={status}
             onChange={(event) => onChange("status", event.target.value)}
           >
@@ -77,20 +80,22 @@ export function FiltersSection({
             <option value="cleaning">Cleaning</option>
           </select>
         </div>
-        <button
-          className="rounded-[12px] bg-gradient-to-br from-[var(--accent-blue)] to-[var(--accent-purple)] px-7 py-3 text-[0.95em] font-bold uppercase tracking-[0.5px] text-[var(--text-primary)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(59,130,246,0.4)]"
-          onClick={onApply}
-          type="button"
-        >
-          Apply Filter
-        </button>
-        <button
-          className="rounded-[12px] border border-[var(--border)] bg-[var(--bg-card)] px-7 py-3 text-[0.95em] font-bold uppercase tracking-[0.5px] text-[var(--text-primary)] transition hover:border-[var(--accent-blue)] hover:shadow-[0_10px_30px_rgba(59,130,246,0.2)]"
-          onClick={onReset}
-          type="button"
-        >
-          Reset
-        </button>
+        <div className="flex gap-2">
+          <button
+            className="rounded-lg bg-[var(--accent-blue)] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+            onClick={onApply}
+            type="button"
+          >
+            Apply
+          </button>
+          <button
+            className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
+            onClick={onReset}
+            type="button"
+          >
+            Reset
+          </button>
+        </div>
       </div>
     </section>
   );

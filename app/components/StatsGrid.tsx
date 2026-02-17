@@ -12,28 +12,27 @@ interface StatsGridProps {
 
 export function StatsGrid({ items }: StatsGridProps) {
   return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-5">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
       {items.map((item) => (
         <div
           key={item.label}
-          className="group relative overflow-hidden rounded-[16px] border border-[var(--border)] bg-[var(--bg-secondary)] p-7 transition duration-300 hover:-translate-y-1 hover:border-[var(--accent-blue)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)]"
+          className="group rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-5 transition duration-200 hover:border-[var(--accent-blue)]/20"
         >
-          <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-[var(--accent-blue)] to-[var(--accent-purple)]" />
-          <div className="mb-4 flex items-start justify-between">
-            <div className="text-[0.85em] font-bold uppercase tracking-[1.5px] text-[var(--text-secondary)]">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">
               {item.label}
-            </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[var(--bg-card)] text-lg">
+            </span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--bg-card)] text-xs font-medium text-[var(--text-muted)]">
               {item.icon}
-            </div>
+            </span>
           </div>
           <div
-            className="mb-2 font-mono text-[2.8em] font-extrabold leading-none"
+            className="mb-1 font-mono text-2xl font-semibold leading-none"
             style={item.accentColor ? { color: item.accentColor } : undefined}
           >
             {item.value}
           </div>
-          <div className="text-[0.9em] text-[var(--text-muted)]">{item.subtitle}</div>
+          <div className="text-xs text-[var(--text-muted)]">{item.subtitle}</div>
         </div>
       ))}
     </div>

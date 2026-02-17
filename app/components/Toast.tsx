@@ -9,10 +9,11 @@ export function Toast({ message, onClose }: ToastProps) {
   useEffect(() => {
     const timeout = setTimeout(onClose, 3000);
     return () => clearTimeout(timeout);
-  }, [onClose]);
+  }, [message, onClose]);
 
   return (
-    <div className="fixed right-5 top-5 z-[2000] rounded-[12px] bg-[var(--success)] px-7 py-4 font-bold text-white shadow-[0_10px_40px_rgba(16,185,129,0.4)] animate-fade-in">
+    <div className="fixed bottom-5 right-5 z-[2000] flex items-center gap-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] px-5 py-3 text-sm font-medium text-[var(--text-primary)] shadow-lg animate-fade-in">
+      <span className="h-2 w-2 rounded-full bg-[var(--success)]" />
       {message}
     </div>
   );

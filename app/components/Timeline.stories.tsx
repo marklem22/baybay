@@ -14,7 +14,9 @@ type Story = StoryObj<typeof Timeline>;
 export const Default: Story = {
   args: {
     rooms: sampleHuts.slice(0, 6),
-    days: 14,
     timeline: sampleTimeline,
+    schedules: {},
+    timelineStartOffset: 0,
+    onRoomClick: () => undefined,
   },
 };

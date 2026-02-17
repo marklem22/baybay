@@ -17,6 +17,6 @@
       room: sampleHuts[0],
       isOpen: true,
       onClose: () => undefined,
-      onUpdateStatus: () => undefined,
+      onUpdateSchedule: () => undefined,
     },
   };

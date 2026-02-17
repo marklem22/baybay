@@ -14,9 +14,9 @@ export const Default: Story = {
   args: {
     items: [
       {
-        label: "Total Huts",
+        label: "Total Rooms",
         value: 20,
-        subtitle: "Across 20 huts",
+        subtitle: "Across 20 rooms",
         icon: "BLD",
       },
       {

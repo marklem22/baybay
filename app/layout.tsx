@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ClientLayout } from "./components/ClientLayout";
 
 export const metadata: Metadata = {
   title: "Room Management Dashboard",
@@ -14,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans antialiased">
-        {children}
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );

@@ -7,16 +7,8 @@ import { FloorMap } from "./components/FloorMap";
 import { RoomModal } from "./components/RoomModal";
 import { StatsGrid } from "./components/StatsGrid";
 import { Timeline } from "./components/Timeline";
-import { Toast } from "./components/Toast";
-import {
-  buildTimeline,
-  diffDays,
-  formatDateInput,
-  formatDateTime,
-  type Room,
-  type RoomStatus,
-} from "./lib/roomData";
-import hutsData from "./lib/huts.json";
+import { useAppState } from "./context/AppContext";
+import { formatDateInput, getStatusForDate, type Room, type RoomStatus } from "./lib/roomData";
 
 interface FiltersState {
   startDate: string;
@@ -25,12 +17,26 @@ interface FiltersState {
   status: string;
 }
 
-export default function Home() {
-  const initialHuts = useMemo(() => hutsData as Room[], []);
-  const [huts, setHuts] = useState<Room[]>(initialHuts);
+function normalizeDateRange(startDate: string, endDate: string): { start: Date; end: Date } | null {
+  const start = startDate ? new Date(`${startDate}T00:00:00`) : new Date();
+  const end = endDate ? new Date(`${endDate}T00:00:00`) : new Date(start);
+
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+
+  if (start > end) {
+    return null;
+  }
+
+  return { start, end };
+}
+
+export default function RoomsPage() {
+  const { huts, schedules, timeline, timelineStartOffset, dateTime, handleUpdateSchedule, refreshHuts, setToast } = useAppState();
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-  const [dateTime, setDateTime] = useState("");
-  const [toast, setToast] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
+  const [selectedDateRaw, setSelectedDateRaw] = useState<string | undefined>(undefined);
+  const [selectedDayStatus, setSelectedDayStatus] = useState<RoomStatus | undefined>(undefined);
   const [filters, setFilters] = useState<FiltersState>({
     startDate: "",
     endDate: "",
@@ -44,177 +50,212 @@ export default function Home() {
     status: "all",
   });
 
-  const filteredHuts = useMemo(() => {
-    let result = huts;
-
-    if (appliedFilters.roomType !== "all") {
-      result = result.filter((room) => room.type === appliedFilters.roomType);
-    }
-
-    if (appliedFilters.status !== "all") {
-      result = result.filter((room) => room.status === appliedFilters.status);
-    }
-
-    return result;
-  }, [huts, appliedFilters]);
-
-  const timelineRooms = useMemo(() => filteredHuts.slice(0, 10), [filteredHuts]);
-  const timeline = useMemo(() => buildTimeline(timelineRooms, 30), [timelineRooms]);
-
-  useEffect(() => {
-    const update = () => setDateTime(formatDateTime(new Date()));
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
   useEffect(() => {
     const today = new Date();
     const end = new Date(today);
     end.setDate(end.getDate() + 7);
-    setFilters((current) => ({
-      ...current,
+
+    const defaultFilters: FiltersState = {
       startDate: formatDateInput(today),
       endDate: formatDateInput(end),
-    }));
-    setAppliedFilters((current) => ({
-      ...current,
-      startDate: formatDateInput(today),
-      endDate: formatDateInput(end),
-    }));
+      roomType: "all",
+      status: "all",
+    };
+
+    setFilters(defaultFilters);
+    setAppliedFilters(defaultFilters);
   }, []);
 
-  const stats = useMemo(() => {
-    const available = filteredHuts.filter((room) => room.status === "available").length;
-    const occupied = filteredHuts.filter((room) => room.status === "occupied").length;
-    const maintenance = filteredHuts.filter((room) => room.status === "maintenance").length;
-    const cleaning = filteredHuts.filter((room) => room.status === "cleaning").length;
+  const filteredRooms = useMemo(() => {
+    return huts.filter((room) => {
+      if (appliedFilters.roomType !== "all" && room.type !== appliedFilters.roomType) {
+        return false;
+      }
+
+      const roomSchedule = schedules[room.number] ?? [];
+      const range = normalizeDateRange(appliedFilters.startDate, appliedFilters.endDate);
+      if (!range) {
+        return false;
+      }
+
+      const statusByDay: RoomStatus[] = [];
+      const cursor = new Date(range.start);
+      while (cursor <= range.end) {
+        const statusForDay = getStatusForDate(roomSchedule, cursor, room.status);
+        statusByDay.push(statusForDay);
+        cursor.setDate(cursor.getDate() + 1);
+      }
+
+      if (appliedFilters.status === "all" || appliedFilters.status === "available") {
+        return statusByDay.every((status) => status === "available");
+      }
+
+      return statusByDay.some((status) => status === appliedFilters.status);
+    });
+  }, [huts, schedules, appliedFilters]);
+
+  const filteredStats = useMemo(() => {
+    const referenceDate = appliedFilters.startDate
+      ? new Date(`${appliedFilters.startDate}T00:00:00`)
+      : new Date();
+    referenceDate.setHours(0, 0, 0, 0);
+
+    const counts: Record<RoomStatus, number> = {
+      available: 0,
+      occupied: 0,
+      maintenance: 0,
+      cleaning: 0,
+    };
+
+    filteredRooms.forEach((room) => {
+      const roomSchedule = schedules[room.number] ?? [];
+      const statusForReferenceDate = getStatusForDate(roomSchedule, referenceDate, room.status);
+      counts[statusForReferenceDate] += 1;
+    });
 
     return [
       {
-        label: "Total Huts",
-        value: filteredHuts.length,
-        subtitle: `Across ${filteredHuts.length} huts`,
+        label: "Total Rooms",
+        value: filteredRooms.length,
+        subtitle: `${filteredRooms.length} rooms shown`,
         icon: "BLD",
       },
       {
         label: "Available",
-        value: available,
+        value: counts.available,
         subtitle: "Ready for guests",
         icon: "OK",
         accentColor: "var(--success)",
       },
       {
         label: "Occupied",
-        value: occupied,
+        value: counts.occupied,
         subtitle: "Currently in use",
         icon: "IN",
         accentColor: "var(--danger)",
       },
       {
         label: "Maintenance",
-        value: maintenance,
+        value: counts.maintenance,
         subtitle: "Under service",
         icon: "SV",
         accentColor: "var(--warning)",
       },
       {
         label: "Cleaning",
-        value: cleaning,
-        subtitle: "Preparing for guests",
+        value: counts.cleaning,
+        subtitle: "Being prepared",
         icon: "CL",
         accentColor: "var(--accent-cyan)",
       },
     ];
-  }, [filteredHuts]);
+  }, [filteredRooms, schedules, appliedFilters.startDate]);
 
-  const handleUpdateStatus = (status: RoomStatus) => {
-    if (!selectedRoom) {
-      return;
-    }
-
-    setHuts((current) =>
-      current.map((room) => (room.number === selectedRoom.number ? { ...room, status } : room))
-    );
-    setSelectedRoom(null);
-    setToast(`Hut ${selectedRoom.number} updated to ${status.toUpperCase()}`);
-  };
-
-  const handleFilterChange = (field: keyof FiltersState, value: string) => {
-    setFilters((current) => ({ ...current, [field]: value }));
+  const handleFilterChange = (
+    field: "startDate" | "endDate" | "roomType" | "status",
+    value: string,
+  ) => {
+    setFilters((current) => {
+      const next = { ...current, [field]: value };
+      setAppliedFilters(next);
+      return next;
+    });
   };
 
   const handleApplyFilters = () => {
-    if (filters.startDate && filters.endDate) {
-      const days = diffDays(filters.startDate, filters.endDate);
-      setAppliedFilters(filters);
-
-      let nextCount = huts.length;
-      if (filters.roomType !== "all" || filters.status !== "all") {
-        nextCount = huts.filter((room) => {
-          const typeMatch = filters.roomType === "all" || room.type === filters.roomType;
-          const statusMatch = filters.status === "all" || room.status === filters.status;
-          return typeMatch && statusMatch;
-        }).length;
-      }
-
-      setToast(
-        `Filter applied: ${days} day(s) | Type: ${filters.roomType} | Status: ${filters.status} | ${nextCount} hut(s)`
-      );
-    }
+    setAppliedFilters(filters);
+    setToast(`Filters applied. Showing ${filteredRooms.length} room(s).`);
   };
 
   const handleResetFilters = () => {
     const today = new Date();
     const end = new Date(today);
     end.setDate(end.getDate() + 7);
-    setFilters({
+
+    const resetFilters: FiltersState = {
       startDate: formatDateInput(today),
       endDate: formatDateInput(end),
       roomType: "all",
       status: "all",
+    };
+
+    setFilters(resetFilters);
+    setAppliedFilters(resetFilters);
+    void refreshHuts();
+    setToast("Filters reset and room data refreshed.");
+  };
+
+  const handleFloorMapRoomClick = (room: Room) => {
+    setSelectedRoom(room);
+    setSelectedDate(undefined);
+    setSelectedDateRaw(undefined);
+    setSelectedDayStatus(undefined);
+  };
+
+  const handleTimelineRoomClick = (room: Room, dayIndex: number, status: RoomStatus) => {
+    const date = new Date();
+    date.setDate(date.getDate() + dayIndex);
+    const dateStr = date.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
     });
-    setAppliedFilters({
-      startDate: formatDateInput(today),
-      endDate: formatDateInput(end),
-      roomType: "all",
-      status: "all",
-    });
-    setToast("Filters reset");
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    setSelectedDateRaw(`${year}-${month}-${day}`);
+    setSelectedRoom(room);
+    setSelectedDate(dateStr);
+    setSelectedDayStatus(status);
   };
 
   return (
-    <div className="relative min-h-screen">
-      <div className="bg-pattern" />
-      <div className="relative z-10 mx-auto flex max-w-[1920px] flex-col gap-8 px-8 py-7">
-        <DashboardHeader
-          title="Hut Management System"
-          subtitle="Internal Operations Dashboard"
-          statusLabel="LIVE"
-          dateTime={dateTime}
-        />
+    <div className="mx-auto flex max-w-[1400px] flex-col gap-5 p-4 pt-14 sm:p-6 md:pt-6">
+      <DashboardHeader
+        title="Room Management"
+        subtitle="Manage and monitor your rooms"
+        statusLabel="LIVE"
+        dateTime={dateTime}
+      />
 
-        <FiltersSection
-          startDate={filters.startDate}
-          endDate={filters.endDate}
-          roomType={filters.roomType}
-          status={filters.status}
-          onChange={handleFilterChange}
-          onApply={handleApplyFilters}
-          onReset={handleResetFilters}
-        />
-        <StatsGrid items={stats} />
-        <FloorMap huts={filteredHuts} onRoomClick={setSelectedRoom} />
-        <Timeline rooms={timelineRooms} days={30} timeline={timeline} />
-      </div>
+      <FiltersSection
+        startDate={filters.startDate}
+        endDate={filters.endDate}
+        roomType={filters.roomType}
+        status={filters.status}
+        onChange={handleFilterChange}
+        onApply={handleApplyFilters}
+        onReset={handleResetFilters}
+      />
+
+      <StatsGrid items={filteredStats} />
+
+      <FloorMap huts={filteredRooms} onRoomClick={handleFloorMapRoomClick} />
+
+      <Timeline
+        rooms={filteredRooms}
+        timeline={timeline}
+        schedules={schedules}
+        timelineStartOffset={timelineStartOffset}
+        onRoomClick={handleTimelineRoomClick}
+      />
 
       <RoomModal
         room={selectedRoom}
         isOpen={Boolean(selectedRoom)}
-        onClose={() => setSelectedRoom(null)}
-        onUpdateStatus={handleUpdateStatus}
+        onClose={() => {
+          setSelectedRoom(null);
+          setSelectedDate(undefined);
+          setSelectedDateRaw(undefined);
+          setSelectedDayStatus(undefined);
+        }}
+        selectedDate={selectedDate}
+        selectedDateRaw={selectedDateRaw}
+        selectedDayStatus={selectedDayStatus}
+        schedule={selectedRoom ? schedules[selectedRoom.number] ?? [] : []}
+        onUpdateSchedule={handleUpdateSchedule}
       />
-      {toast ? <Toast message={toast} onClose={() => setToast(null)} /> : null}
     </div>
   );
 }

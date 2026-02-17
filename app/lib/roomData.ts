@@ -3,6 +3,7 @@ export type RoomType = "single" | "double" | "suite" | "deluxe";
 
 export interface Room {
   number: number;
+  name?: string;
   type: RoomType;
   status: RoomStatus;
   floor?: number;
@@ -13,6 +14,26 @@ export interface Room {
 export interface Floor {
   number: number;
   rooms: Room[];
+}
+
+/** A date-range-based status entry for scheduling room availability */
+export interface StatusEntry {
+  id: string;
+  status: RoomStatus;
+  startDate: string; // YYYY-MM-DD
+  endDate: string;   // YYYY-MM-DD
+}
+
+export type ActivityLogAction = "schedule_added" | "schedule_removed";
+
+export interface ActivityLog {
+  id: string;
+  roomNumber: number;
+  action: ActivityLogAction;
+  status: RoomStatus;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  createdAt: string; // ISO string
 }
 
 const ROOM_TYPES: RoomType[] = ["single", "double", "suite", "deluxe"];
@@ -71,13 +92,50 @@ export function diffDays(start: string, end: string): number {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
 
-export function buildTimeline(rooms: Room[], days: number): Record<number, RoomStatus[]> {
+/** Generate a unique ID for schedule entries */
+export function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+/**
+ * Resolve the status for a specific date given a list of schedule entries.
+ * Later entries take priority. Falls back to defaultStatus.
+ */
+export function getStatusForDate(
+  schedule: StatusEntry[],
+  date: Date,
+  defaultStatus: RoomStatus,
+): RoomStatus {
+  const dateStr = formatDateInput(date);
+  for (let i = schedule.length - 1; i >= 0; i--) {
+    const entry = schedule[i];
+    if (dateStr >= entry.startDate && dateStr <= entry.endDate) {
+      return entry.status;
+    }
+  }
+  return defaultStatus;
+}
+
+/**
+ * Build a timeline array for each room.
+ * Uses schedule entries when provided; otherwise falls back to room.status for every day.
+ */
+export function buildTimeline(
+  rooms: Room[],
+  days: number,
+  schedules?: Record<number, StatusEntry[]>,
+  startDayOffset = 0,
+): Record<number, RoomStatus[]> {
   const timeline: Record<number, RoomStatus[]> = {};
-  const choices: RoomStatus[] = ["available", "occupied", "available"];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   rooms.forEach((room) => {
-    timeline[room.number] = Array.from({ length: days }, () => {
-      return choices[Math.floor(Math.random() * choices.length)];
+    const roomSchedule = schedules?.[room.number] ?? [];
+    timeline[room.number] = Array.from({ length: days }, (_, i) => {
+      const date = new Date(today);
+      date.setDate(date.getDate() + startDayOffset + i);
+      return getStatusForDate(roomSchedule, date, room.status);
     });
   });
 
