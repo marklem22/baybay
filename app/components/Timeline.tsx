@@ -41,6 +41,7 @@ const statusLabel: Record<RoomStatus, string> = {
 const DAY_MS = 1000 * 60 * 60 * 24;
 const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thur", "Fri", "Sat"] as const;
 type TimelineWindow = "seven_days" | "current_month" | "two_months";
+type SlideDirection = "left" | "right" | null;
 
 interface TimelineWindowConfig {
   id: TimelineWindow;
@@ -111,6 +112,8 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
   const [sevenDayOffset, setSevenDayOffset] = useState(0);
   const [monthOffset, setMonthOffset] = useState(0);
   const [hoveredCell, setHoveredCell] = useState<{ room: number; day: number } | null>(null);
+  const [slideDirection, setSlideDirection] = useState<SlideDirection>(null);
+  const [slideToken, setSlideToken] = useState(0);
 
   // Track previous statuses for flip animation
   const prevTimelineRef = useRef<Record<number, RoomStatus[]>>({});
@@ -160,6 +163,7 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
   const stickyRoomColumnStyle = { minWidth: `${roomColumnWidth}px` };
 
   const handleWindowSelect = (nextMode: TimelineWindow) => {
+    setSlideDirection(null);
     setWindowMode(nextMode);
     if (nextMode === "seven_days") {
       setSevenDayOffset(0);
@@ -169,6 +173,9 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
   };
 
   const handlePrevious = () => {
+    setSlideDirection("right");
+    setSlideToken((current) => current + 1);
+
     if (windowMode === "seven_days") {
       setSevenDayOffset((current) => current - 7);
       return;
@@ -183,6 +190,9 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
   };
 
   const handleNext = () => {
+    setSlideDirection("left");
+    setSlideToken((current) => current + 1);
+
     if (windowMode === "seven_days") {
       setSevenDayOffset((current) => current + 7);
       return;
@@ -264,7 +274,11 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
 
       {/* Timeline grid */}
       <div className="overflow-x-auto p-4">
-        <div style={{ minWidth: `${Math.max(720, timelineMinWidth)}px` }}>
+        <div
+          key={`timeline-window-${windowMode}-${startOffset}-${slideToken}`}
+          className={slideDirection ? `timeline-window-slide-${slideDirection}` : undefined}
+          style={{ minWidth: `${Math.max(720, timelineMinWidth)}px` }}
+        >
           {/* Month row */}
           <div
             className="grid"

@@ -1,5 +1,59 @@
 [
   {
+    "id": "1771317594634-vxqe30u7",
+    "roomNumber": 3,
+    "action": "schedule_added",
+    "status": "occupied",
+    "startDate": "2026-02-18",
+    "endDate": "2026-02-20",
+    "createdAt": "2026-02-17T08:39:54.343Z"
+  },
+  {
+    "id": "1771317580577-z78x4hpn",
+    "roomNumber": 3,
+    "action": "schedule_removed",
+    "status": "occupied",
+    "startDate": "2026-02-17",
+    "endDate": "2026-02-17",
+    "createdAt": "2026-02-17T08:39:39.791Z"
+  },
+  {
+    "id": "1771317575888-gvd132ig",
+    "roomNumber": 2,
+    "action": "schedule_removed",
+    "status": "maintenance",
+    "startDate": "2026-02-17",
+    "endDate": "2026-02-19",
+    "createdAt": "2026-02-17T08:39:35.632Z"
+  },
+  {
+    "id": "1771317570669-b32bibdv",
+    "roomNumber": 4,
+    "action": "schedule_removed",
+    "status": "available",
+    "startDate": "2026-02-19",
+    "endDate": "2026-02-19",
+    "createdAt": "2026-02-17T08:39:30.429Z"
+  },
+  {
+    "id": "1771317560942-c56kqxri",
+    "roomNumber": 4,
+    "action": "schedule_added",
+    "status": "occupied",
+    "startDate": "2026-02-17",
+    "endDate": "2026-02-17",
+    "createdAt": "2026-02-17T08:39:19.728Z"
+  },
+  {
+    "id": "1771317317973-oxxqnj5q",
+    "roomNumber": 1,
+    "action": "schedule_removed",
+    "status": "occupied",
+    "startDate": "2026-02-17",
+    "endDate": "2026-02-20",
+    "createdAt": "2026-02-17T08:35:15.949Z"
+  },
+  {
     "id": "1771316958098-a5mbek8o",
     "roomNumber": 1,
     "action": "schedule_added",
