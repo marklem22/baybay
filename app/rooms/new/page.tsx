@@ -171,9 +171,6 @@ export default function NewRoomPage() {
               </Link>
             </div>
 
-            <div className="md:col-span-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 text-xs text-[var(--text-secondary)]">
-              New rooms are saved directly to `huts.json` via the backend API.
-            </div>
 
             <label className="flex flex-col gap-1.5 text-sm">
               <span className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">

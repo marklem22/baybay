@@ -72,6 +72,11 @@ export default function RoomsPage() {
         return false;
       }
 
+      // When status filter is "all", show every room (only room-type filter applies)
+      if (appliedFilters.status === "all") {
+        return true;
+      }
+
       const roomSchedule = schedules[room.number] ?? [];
       const range = normalizeDateRange(appliedFilters.startDate, appliedFilters.endDate);
       if (!range) {
@@ -86,10 +91,12 @@ export default function RoomsPage() {
         cursor.setDate(cursor.getDate() + 1);
       }
 
-      if (appliedFilters.status === "all" || appliedFilters.status === "available") {
+      if (appliedFilters.status === "available") {
+        // Room must be available for the entire stay period
         return statusByDay.every((status) => status === "available");
       }
 
+      // For other statuses, show rooms that have that status on any day in the range
       return statusByDay.some((status) => status === appliedFilters.status);
     });
   }, [huts, schedules, appliedFilters]);
@@ -116,8 +123,8 @@ export default function RoomsPage() {
     return [
       {
         label: "Total Rooms",
-        value: filteredRooms.length,
-        subtitle: `${filteredRooms.length} rooms shown`,
+        value: huts.length,
+        subtitle: `${filteredRooms.length} of ${huts.length} shown`,
         icon: "BLD",
       },
       {
@@ -149,7 +156,7 @@ export default function RoomsPage() {
         accentColor: "var(--accent-cyan)",
       },
     ];
-  }, [filteredRooms, schedules, appliedFilters.startDate]);
+  }, [huts.length, filteredRooms, schedules, appliedFilters.startDate]);
 
   const handleFilterChange = (
     field: "startDate" | "endDate" | "roomType" | "status",

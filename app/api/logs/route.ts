@@ -7,6 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const logsFilePath = path.join(process.cwd(), "app", "lib", "activityLogs.json");
+const archiveFilePath = path.join(process.cwd(), "app", "lib", "archivedLogs.json");
 const allowedStatuses: RoomStatus[] = ["available", "occupied", "maintenance", "cleaning"];
 const allowedActions: ActivityLogAction[] = ["schedule_added", "schedule_removed"];
 
@@ -166,6 +167,25 @@ async function readLogs(): Promise<ActivityLog[]> {
 
 async function writeLogs(logs: ActivityLog[]): Promise<void> {
   await writeJsonFile(logsFilePath, logs);
+}
+
+interface ArchivedLog extends ActivityLog {
+  archivedAt: string;
+}
+
+async function readArchive(): Promise<ArchivedLog[]> {
+  const parsed = await readJsonFile<unknown>(archiveFilePath);
+  if (!Array.isArray(parsed)) {
+    return [];
+  }
+  return parsed.filter((entry): entry is ArchivedLog => {
+    if (!isActivityLog(entry)) return false;
+    return typeof (entry as unknown as Record<string, unknown>).archivedAt === "string";
+  });
+}
+
+async function writeArchive(logs: ArchivedLog[]): Promise<void> {
+  await writeJsonFile(archiveFilePath, logs);
 }
 
 function normalizeIds(value: unknown): string[] | null {
@@ -343,23 +363,22 @@ export async function DELETE(request: Request) {
     }
 
     const existing = await readLogs();
+    const existingArchive = await readArchive();
 
     if (mode === "all") {
-      const deletedCount = existing.length;
-      if (deletedCount > 0) {
+      const archivedCount = existing.length;
+      if (archivedCount > 0) {
+        const archivedEntries = existing.map((entry) => ({
+          ...entry,
+          archivedAt: new Date().toISOString(),
+        }));
+        await writeArchive([...archivedEntries, ...existingArchive]);
         await writeLogs([]);
       }
 
       return NextResponse.json(
-        {
-          success: true,
-          deletedCount,
-        },
-        {
-          headers: {
-            "Cache-Control": "no-store",
-          },
-        },
+        { success: true, archivedCount },
+        { headers: { "Cache-Control": "no-store" } },
       );
     }
 
@@ -369,28 +388,27 @@ export async function DELETE(request: Request) {
     }
 
     const idsSet = new Set(ids);
+    const toArchive = existing.filter((entry) => idsSet.has(entry.id));
     const nextLogs = existing.filter((entry) => !idsSet.has(entry.id));
-    const deletedCount = existing.length - nextLogs.length;
+    const archivedCount = toArchive.length;
 
-    if (deletedCount === 0) {
+    if (archivedCount === 0) {
       return NextResponse.json({ error: "No matching logs were found." }, { status: 404 });
     }
 
+    const archivedEntries = toArchive.map((entry) => ({
+      ...entry,
+      archivedAt: new Date().toISOString(),
+    }));
+    await writeArchive([...archivedEntries, ...existingArchive]);
     await writeLogs(nextLogs);
 
     return NextResponse.json(
-      {
-        success: true,
-        deletedCount,
-      },
-      {
-        headers: {
-          "Cache-Control": "no-store",
-        },
-      },
+      { success: true, archivedCount },
+      { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
-    console.error("Failed to bulk delete activity logs", error);
-    return NextResponse.json({ error: "Failed to delete activity logs." }, { status: 500 });
+    console.error("Failed to archive activity logs", error);
+    return NextResponse.json({ error: "Failed to archive activity logs." }, { status: 500 });
   }
 }

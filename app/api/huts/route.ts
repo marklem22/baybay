@@ -7,6 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const hutsFilePath = path.join(process.cwd(), "app", "lib", "huts.json");
+const archivedHutsFilePath = path.join(process.cwd(), "app", "lib", "archivedHuts.json");
 const allowedStatuses: RoomStatus[] = ["available", "occupied", "maintenance", "cleaning"];
 const allowedTypes: RoomType[] = ["single", "double", "suite", "deluxe"];
 
@@ -393,13 +394,21 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Room not found." }, { status: 404 });
     }
 
-    const [deletedRoom] = huts.splice(roomIndex, 1);
+    const [archivedRoom] = huts.splice(roomIndex, 1);
     await writeHuts(huts);
+
+    // Move to archive
+    const existingArchive = await readJsonFile<unknown>(archivedHutsFilePath);
+    const archive: { room: Room; archivedAt: string }[] = Array.isArray(existingArchive)
+      ? (existingArchive as { room: Room; archivedAt: string }[])
+      : [];
+    archive.unshift({ room: archivedRoom, archivedAt: new Date().toISOString() });
+    await writeJsonFile(archivedHutsFilePath, archive);
 
     return NextResponse.json(
       {
         success: true,
-        room: deletedRoom,
+        room: archivedRoom,
       },
       {
         headers: {
@@ -408,7 +417,7 @@ export async function DELETE(request: Request) {
       },
     );
   } catch (error) {
-    console.error("Failed to delete room from huts.json", error);
-    return NextResponse.json({ error: "Failed to delete room." }, { status: 500 });
+    console.error("Failed to archive room", error);
+    return NextResponse.json({ error: "Failed to archive room." }, { status: 500 });
   }
 }

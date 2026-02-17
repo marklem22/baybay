@@ -57,8 +57,8 @@ export default function EditRoomPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [isArchiveConfirmOpen, setIsArchiveConfirmOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -195,7 +195,7 @@ export default function EditRoomPage() {
     }
   };
 
-  const handleDeleteRoom = async () => {
+  const handleArchiveRoom = async () => {
     if (initialRoomNumber === null) {
       setError("Room details are not loaded yet.");
       return;
@@ -203,7 +203,7 @@ export default function EditRoomPage() {
 
     setError(null);
     setSuccess(null);
-    setIsDeleting(true);
+    setIsArchiving(true);
 
     try {
       const response = await fetch("/api/huts", {
@@ -214,23 +214,23 @@ export default function EditRoomPage() {
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(payload?.error ?? "Failed to delete room.");
+        throw new Error(payload?.error ?? "Failed to archive room.");
       }
 
       const payload = (await response.json()) as { room?: Room };
-      const deletedRoomNumber = payload.room?.number ?? initialRoomNumber;
+      const archivedRoomNumber = payload.room?.number ?? initialRoomNumber;
 
-      setSuccess(`Room ${deletedRoomNumber} deleted.`);
-      setIsDeleteConfirmOpen(false);
+      setSuccess(`Room ${archivedRoomNumber} archived. You can restore it later.`);
+      setIsArchiveConfirmOpen(false);
 
       window.setTimeout(() => {
         router.push("/");
-      }, 500);
-    } catch (deleteError) {
-      const message = deleteError instanceof Error ? deleteError.message : "Failed to delete room.";
+      }, 700);
+    } catch (archiveError) {
+      const message = archiveError instanceof Error ? archiveError.message : "Failed to archive room.";
       setError(message);
     } finally {
-      setIsDeleting(false);
+      setIsArchiving(false);
     }
   };
 
@@ -399,15 +399,15 @@ export default function EditRoomPage() {
               <div className="flex flex-wrap justify-end gap-2 md:col-span-2">
                 <button
                   type="button"
-                  onClick={() => setIsDeleteConfirmOpen(true)}
-                  disabled={isSubmitting || isDeleting || initialRoomNumber === null}
-                  className="rounded-md border border-[var(--danger)]/40 bg-[var(--danger-soft)] px-4 py-2.5 text-sm font-semibold text-[var(--danger)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={() => setIsArchiveConfirmOpen(true)}
+                  disabled={isSubmitting || isArchiving || initialRoomNumber === null}
+                  className="rounded-md border border-[var(--warning)]/40 bg-[color-mix(in_srgb,var(--warning)_12%,transparent)] px-4 py-2.5 text-sm font-semibold text-[var(--warning)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Delete Room
+                  Archive Room
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting || isDeleting}
+                  disabled={isSubmitting || isArchiving}
                   className="rounded-md bg-[var(--accent-blue)] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSubmitting ? "Saving..." : "Save Changes"}
@@ -463,20 +463,20 @@ export default function EditRoomPage() {
       </section>
 
       <ConfirmationModal
-        isOpen={isDeleteConfirmOpen}
-        title={`Delete Room ${previewNumber}?`}
-        description="This permanently removes the room from your map and timeline."
-        confirmLabel="Delete Room"
+        isOpen={isArchiveConfirmOpen}
+        title={`Archive Room ${previewNumber}?`}
+        description="This room will be moved to the archive. You can restore it later from the archived rooms list."
+        confirmLabel="Archive Room"
         cancelLabel="Keep Room"
-        tone="danger"
-        isLoading={isDeleting}
+        tone="primary"
+        isLoading={isArchiving}
         onClose={() => {
-          if (!isDeleting) {
-            setIsDeleteConfirmOpen(false);
+          if (!isArchiving) {
+            setIsArchiveConfirmOpen(false);
           }
         }}
         onConfirm={() => {
-          void handleDeleteRoom();
+          void handleArchiveRoom();
         }}
       />
     </div>

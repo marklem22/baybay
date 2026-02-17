@@ -34,6 +34,18 @@ const navItems = [
     ),
   },
   {
+    id: "archived-rooms",
+    label: "Archived Rooms",
+    href: "/rooms/archive",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="21 8 21 21 3 21 3 8" />
+        <rect x="1" y="3" width="22" height="5" />
+        <line x1="10" y1="12" x2="14" y2="12" />
+      </svg>
+    ),
+  },
+  {
     id: "logs",
     label: "Logs",
     href: "/logs",
@@ -44,6 +56,18 @@ const navItems = [
         <line x1="16" y1="13" x2="8" y2="13" />
         <line x1="16" y1="17" x2="8" y2="17" />
         <polyline points="10 9 9 9 8 9" />
+      </svg>
+    ),
+  },
+  {
+    id: "tutorial",
+    label: "Tutorial",
+    href: "/tutorial",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9.5 9a2.5 2.5 0 015 0c0 1.7-2.5 1.9-2.5 3.5" />
+        <circle cx="12" cy="17" r="0.8" fill="currentColor" stroke="none" />
       </svg>
     ),
   },
@@ -110,7 +134,7 @@ export function Sidebar({ activePage, theme, onToggleTheme }: SidebarProps) {
           R
         </div>
         {!collapsed && (
-          <span className="text-[0.95rem] font-semibold tracking-tight">RoomManager</span>
+          <span className="text-[0.95rem] font-semibold tracking-tight">Booking</span>
         )}
       </div>
 

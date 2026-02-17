@@ -7,6 +7,30 @@
       "endDate": "2026-03-04"
     }
   ],
+  "2": [
+    {
+      "id": "1771313277517-pp062td",
+      "status": "maintenance",
+      "startDate": "2026-02-17",
+      "endDate": "2026-02-19"
+    }
+  ],
+  "3": [
+    {
+      "id": "1771313291984-mk0tdb8",
+      "status": "occupied",
+      "startDate": "2026-02-17",
+      "endDate": "2026-02-17"
+    }
+  ],
+  "5": [
+    {
+      "id": "1771313323825-c6dox8h",
+      "status": "cleaning",
+      "startDate": "2026-02-17",
+      "endDate": "2026-02-20"
+    }
+  ],
   "7": [
     {
       "id": "1771305215574-39t6coj",
