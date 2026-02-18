@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "room": {
+      "number": 3,
+      "type": "suite",
+      "status": "available",
+      "capacity": 3,
+      "zone": "North",
+      "name": "elegant room",
+      "floor": 2
+    },
+    "archivedAt": "2026-02-17T08:57:10.732Z"
+  },
+  {
+    "room": {
+      "number": 2,
+      "type": "double",
+      "status": "available",
+      "capacity": 2,
+      "zone": "North",
+      "name": "awesome room",
+      "floor": 1
+    },
+    "archivedAt": "2026-02-17T08:57:02.045Z"
+  }
+]

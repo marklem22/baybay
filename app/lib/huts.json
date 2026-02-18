@@ -9,24 +9,6 @@
     "floor": 1
   },
   {
-    "number": 2,
-    "type": "double",
-    "status": "available",
-    "capacity": 2,
-    "zone": "North",
-    "name": "awesome room",
-    "floor": 1
-  },
-  {
-    "number": 3,
-    "type": "suite",
-    "status": "available",
-    "capacity": 3,
-    "zone": "North",
-    "name": "elegant room",
-    "floor": 2
-  },
-  {
     "number": 4,
     "type": "deluxe",
     "status": "available",
