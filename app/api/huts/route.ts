@@ -2,6 +2,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import type { Room, RoomStatus, RoomType } from "../../lib/roomData";
 import { readJsonFile, writeJsonFile } from "../../lib/server/jsonFileStore";
+import { readRoomTypes } from "../../lib/server/roomTypesStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,14 +10,18 @@ export const dynamic = "force-dynamic";
 const hutsFilePath = path.join(process.cwd(), "app", "lib", "huts.json");
 const archivedHutsFilePath = path.join(process.cwd(), "app", "lib", "archivedHuts.json");
 const allowedStatuses: RoomStatus[] = ["available", "occupied", "maintenance", "cleaning"];
-const allowedTypes: RoomType[] = ["single", "double", "suite", "deluxe"];
 
 function isRoomStatus(value: unknown): value is RoomStatus {
   return typeof value === "string" && allowedStatuses.includes(value as RoomStatus);
 }
 
-function isRoomType(value: unknown): value is RoomType {
-  return typeof value === "string" && allowedTypes.includes(value as RoomType);
+async function isKnownRoomType(value: unknown): Promise<boolean> {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return false;
+  }
+
+  const roomTypes = await readRoomTypes();
+  return roomTypes.some((entry) => entry.key === value);
 }
 
 function isPositiveInteger(value: unknown): value is number {
@@ -86,7 +91,7 @@ export async function GET(request: Request) {
     }
 
     const typeFilterRaw = searchParams.get("type");
-    if (typeFilterRaw !== null && !isRoomType(typeFilterRaw)) {
+    if (typeFilterRaw !== null && typeFilterRaw.trim().length === 0) {
       return NextResponse.json({ error: "Invalid type query parameter." }, { status: 400 });
     }
 
@@ -214,9 +219,10 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Invalid new room number." }, { status: 400 });
     }
 
-    if (body.type !== undefined && !isRoomType(body.type)) {
+    if (body.type !== undefined && !(await isKnownRoomType(body.type))) {
       return NextResponse.json({ error: "Invalid room type." }, { status: 400 });
     }
+    const parsedType = typeof body.type === "string" ? (body.type as RoomType) : undefined;
 
     if (body.status !== undefined && !isRoomStatus(body.status)) {
       return NextResponse.json({ error: "Invalid room status." }, { status: 400 });
@@ -265,7 +271,7 @@ export async function PATCH(request: Request) {
       ...currentRoom,
       number: targetNumber,
       ...(trimmedName !== undefined ? { name: trimmedName } : {}),
-      ...(body.type !== undefined ? { type: body.type } : {}),
+      ...(parsedType !== undefined ? { type: parsedType } : {}),
       ...(body.status !== undefined ? { status: body.status } : {}),
       ...(parsedCapacity !== undefined && parsedCapacity !== null
         ? { capacity: parsedCapacity }
@@ -314,9 +320,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Room name is required." }, { status: 400 });
     }
 
-    if (!isRoomType(body.type)) {
+    if (!(await isKnownRoomType(body.type))) {
       return NextResponse.json({ error: "Invalid room type." }, { status: 400 });
     }
+    const parsedType = body.type as RoomType;
 
     if (!isRoomStatus(body.status)) {
       return NextResponse.json({ error: "Invalid room status." }, { status: 400 });
@@ -356,7 +363,7 @@ export async function POST(request: Request) {
     const newRoom: Room = {
       number: parsedNumber,
       name: trimmedName,
-      type: body.type,
+      type: parsedType,
       status: body.status,
       capacity: parsedCapacity,
       ...(typeof parsedFloor === "number" ? { floor: parsedFloor } : {}),

@@ -1,19 +1,39 @@
 [
   {
+    "number": 4,
+    "type": "deluxe",
+    "status": "available",
+    "capacity": 4,
+    "zone": "North",
+    "name": "t",
+    "floor": 3
+  },
+  {
+    "number": 3,
+    "type": "suite",
+    "status": "available",
+    "capacity": 3,
+    "zone": "North",
+    "name": "elegant room",
+    "floor": 2
+  },
+  {
+    "number": 2,
+    "type": "double",
+    "status": "available",
+    "capacity": 2,
+    "zone": "North",
+    "name": "awesome room",
+    "floor": 1
+  },
+  {
     "number": 1,
     "type": "single",
     "status": "available",
     "capacity": 1,
     "zone": "North",
     "name": "nice room",
-    "floor": 1
-  },
-  {
-    "number": 4,
-    "type": "deluxe",
-    "status": "available",
-    "capacity": 4,
-    "zone": "North"
+    "floor": 2
   },
   {
     "number": 5,

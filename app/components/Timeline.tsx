@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  formatDateInput,
   getScheduleEntryForDate,
   getStatusForDate,
   type Room,
@@ -361,16 +362,26 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
                   const timelineDayOffset = startOffset + index;
                   const timelineArrayIndex = timelineDayOffset - timelineStartOffset;
                   const timelineStatus = timeline[room.number]?.[timelineArrayIndex];
+                  const roomSchedule = schedules[room.number] ?? [];
                   const scheduleEntry = getScheduleEntryForDate(
-                    schedules[room.number] ?? [],
+                    roomSchedule,
                     date,
                   );
                   const scheduleStatus = getStatusForDate(
-                    schedules[room.number] ?? [],
+                    roomSchedule,
                     date,
                     room.status,
                   );
                   const status = timelineStatus ?? scheduleStatus;
+
+                  // Detect check-in / check-out markers
+                  const cellDateStr = formatDateInput(date);
+                  const isCheckIn = roomSchedule.some(
+                    (e) => e.startDate === cellDateStr && e.startDate !== e.endDate,
+                  );
+                  const isCheckOut = roomSchedule.some(
+                    (e) => e.endDate === cellDateStr && e.startDate !== e.endDate,
+                  );
                   const cellKey = `${room.number}-${timelineDayOffset}`;
                   const isFlipping = flippingCells.has(cellKey);
                   const isHovered =
@@ -398,9 +409,15 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
                       key={cellKey}
                       className={`timeline-cell relative cursor-pointer transition-all duration-100 hover:brightness-95 ${isFlipping ? "cell-flip" : ""}`}
                       style={{
-                        backgroundColor: statusBg[status],
+                        backgroundColor: (isCheckIn || isCheckOut)
+                          ? "color-mix(in srgb, var(--danger) 30%, var(--bg-card))"
+                          : statusBg[status],
                         minHeight: "34px",
-                        boxShadow: isHovered ? `inset 0 0 0 1px ${statusColor[status]}` : undefined,
+                        boxShadow: isHovered
+                          ? `inset 0 0 0 1px ${statusColor[status]}`
+                          : (isCheckIn || isCheckOut)
+                            ? "inset 0 0 0 1px var(--danger)"
+                            : undefined,
                         perspective: "400px",
                         zIndex: isHovered ? 40 : 1,
                       }}
@@ -408,6 +425,21 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
                       onMouseEnter={() => setHoveredCell({ room: room.number, day: timelineDayOffset })}
                       onMouseLeave={() => setHoveredCell(null)}
                     >
+                      {/* Check-in / Check-out badge */}
+                      {(isCheckIn || isCheckOut) && (
+                        <div className="flex h-full items-center justify-center">
+                          <span
+                            className="rounded px-1 text-[0.5rem] font-bold leading-tight"
+                            style={{
+                              backgroundColor: "var(--danger)",
+                              color: "#fff",
+                              letterSpacing: "0.03em",
+                            }}
+                          >
+                            {isCheckIn ? "IN" : "OUT"}
+                          </span>
+                        </div>
+                      )}
                       {isHovered && (
                         <div
                           className={`absolute bottom-full z-50 mb-2 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-2 shadow-lg ${tooltipPositionClass}`}
@@ -434,6 +466,18 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
                               </span>
                             </div>
                           ) : null}
+                          {(isCheckIn || isCheckOut) && (
+                            <div className="mt-1 flex items-center gap-1.5">
+                              <span
+                                className="rounded px-1 py-0.5 text-[0.55rem] font-bold leading-none text-white"
+                                style={{
+                                  backgroundColor: "var(--danger)",
+                                }}
+                              >
+                                {isCheckIn ? "CHECK-IN" : "CHECK-OUT"}
+                              </span>
+                            </div>
+                          )}
                           <div
                             className={`absolute top-full border-4 border-transparent border-t-[var(--bg-secondary)] ${tooltipArrowClass}`}
                           />

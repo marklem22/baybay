@@ -2,6 +2,7 @@ interface FiltersSectionProps {
   startDate: string;
   endDate: string;
   roomType: string;
+  roomTypeOptions: { key: string; label: string }[];
   status: string;
   onChange: (field: "startDate" | "endDate" | "roomType" | "status", value: string) => void;
   onApply: () => void;
@@ -12,6 +13,7 @@ export function FiltersSection({
   startDate,
   endDate,
   roomType,
+  roomTypeOptions,
   status,
   onChange,
   onApply,
@@ -58,10 +60,11 @@ export function FiltersSection({
             onChange={(event) => onChange("roomType", event.target.value)}
           >
             <option value="all">All Types</option>
-            <option value="single">Single</option>
-            <option value="double">Double</option>
-            <option value="suite">Suite</option>
-            <option value="deluxe">Deluxe</option>
+            {roomTypeOptions.map((option) => (
+              <option key={option.key} value={option.key}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </div>
         <div className="flex flex-col gap-1.5">

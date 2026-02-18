@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
 
 interface TutorialStepCardProps {
   step: number;
@@ -70,18 +71,7 @@ export function TutorialStepCard({
             <h3 className="mt-0.5 text-sm font-semibold sm:text-base">{title}</h3>
           </div>
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-secondary)] transition group-open:rotate-180">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
+            <ChevronDown size={14} />
           </span>
         </summary>
         <div className="border-t border-[var(--border)] p-4 pt-3 sm:p-5 sm:pt-4">{content}</div>

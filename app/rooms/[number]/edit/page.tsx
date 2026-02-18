@@ -6,9 +6,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { ConfirmationModal } from "../../../components/ConfirmationModal";
 import { DashboardHeader } from "../../../components/DashboardHeader";
 import { useAppState } from "../../../context/AppContext";
-import type { Room, RoomStatus, RoomType } from "../../../lib/roomData";
+import type { Room, RoomStatus, RoomTypeRecord } from "../../../lib/roomData";
 
-const roomTypes: RoomType[] = ["single", "double", "suite", "deluxe"];
 const roomStatuses: RoomStatus[] = ["available", "occupied", "maintenance", "cleaning"];
 const statusTone: Record<RoomStatus, string> = {
   available: "var(--success)",
@@ -20,7 +19,7 @@ const statusTone: Record<RoomStatus, string> = {
 interface RoomFormState {
   number: string;
   name: string;
-  type: RoomType;
+  type: string;
   status: RoomStatus;
   capacity: string;
   floor: string;
@@ -49,12 +48,13 @@ export default function EditRoomPage() {
   const [form, setForm] = useState<RoomFormState>({
     number: "",
     name: "",
-    type: "single",
+    type: "",
     status: "available",
     capacity: "1",
     floor: "",
     zone: "",
   });
+  const [roomTypes, setRoomTypes] = useState<RoomTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
@@ -120,6 +120,38 @@ export default function EditRoomPage() {
     };
   }, [roomNumber]);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const loadRoomTypes = async () => {
+      try {
+        const response = await fetch("/api/room-types?usage=0", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Load failed with status ${response.status}`);
+        }
+
+        const payload = (await response.json()) as RoomTypeRecord[];
+        if (!mounted || !Array.isArray(payload)) return;
+        setRoomTypes(payload);
+
+        setForm((current) => {
+          const hasCurrent = payload.some((entry) => entry.key === current.type);
+          if (hasCurrent || current.type.length > 0) {
+            return current;
+          }
+          return { ...current, type: payload[0]?.key ?? "" };
+        });
+      } catch (loadError) {
+        console.error("Failed to load room types", loadError);
+      }
+    };
+
+    void loadRoomTypes();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const handleChange = (field: keyof RoomFormState, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
   };
@@ -145,6 +177,11 @@ export default function EditRoomPage() {
 
     if (form.name.trim().length === 0) {
       setError("Room name is required.");
+      return;
+    }
+
+    if (form.type.trim().length === 0) {
+      setError("Select a room type first.");
       return;
     }
 
@@ -236,7 +273,9 @@ export default function EditRoomPage() {
 
   const previewName = form.name.trim() || "Untitled Room";
   const previewNumber = form.number.trim() || (initialRoomNumber ? String(initialRoomNumber) : "--");
-  const previewType = form.type.charAt(0).toUpperCase() + form.type.slice(1);
+  const previewType =
+    roomTypes.find((entry) => entry.key === form.type)?.label ??
+    (form.type ? form.type.charAt(0).toUpperCase() + form.type.slice(1) : "Not selected");
   const previewStatus = form.status.charAt(0).toUpperCase() + form.status.slice(1);
   const previewZone = form.zone.trim() || "Unassigned Zone";
   const previewCapacity =
@@ -316,11 +355,15 @@ export default function EditRoomPage() {
                 <select
                   value={form.type}
                   onChange={(event) => handleChange("type", event.target.value)}
+                  disabled={roomTypes.length === 0}
                   className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2.5 text-sm outline-none focus:border-[var(--accent-blue)]"
                 >
+                  {roomTypes.length === 0 ? (
+                    <option value="">No room types available</option>
+                  ) : null}
                   {roomTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    <option key={type.key} value={type.key}>
+                      {type.label}{type.isActive ? "" : " (Inactive)"}
                     </option>
                   ))}
                 </select>

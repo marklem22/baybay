@@ -15,6 +15,12 @@ export const Default: Story = {
     startDate: "2026-02-16",
     endDate: "2026-02-23",
     roomType: "all",
+    roomTypeOptions: [
+      { key: "single", label: "Single" },
+      { key: "double", label: "Double" },
+      { key: "suite", label: "Suite" },
+      { key: "deluxe", label: "Deluxe" },
+    ],
     status: "all",
     onChange: () => undefined,
     onApply: () => undefined,

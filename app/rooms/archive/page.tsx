@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Archive } from "lucide-react";
 import { ConfirmationModal } from "../../components/ConfirmationModal";
 import { DashboardHeader } from "../../components/DashboardHeader";
 import { useAppState } from "../../context/AppContext";
@@ -283,21 +284,7 @@ export default function ArchivedRoomsPage() {
           </div>
         ) : archive.length === 0 ? (
           <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-8 text-center text-[var(--text-secondary)]">
-            <svg
-              className="mx-auto mb-3"
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="21 8 21 21 3 21 3 8" />
-              <rect x="1" y="3" width="22" height="5" />
-              <line x1="10" y1="12" x2="14" y2="12" />
-            </svg>
+            <Archive className="mx-auto mb-3" size={32} strokeWidth={1.5} />
             <p className="text-sm font-medium">No archived rooms</p>
             <p className="mt-1 text-xs">Archived rooms will appear here when you archive from Edit Room.</p>
           </div>

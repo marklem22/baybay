@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Trash2, X } from "lucide-react";
 import type { Room, RoomStatus, StatusEntry } from "../lib/roomData";
-import { formatDateInput, generateId } from "../lib/roomData";
+import { formatDateInput, generateId, isDateInEntryRange } from "../lib/roomData";
 
 interface RoomModalProps {
   room: Room | null;
@@ -120,7 +121,7 @@ export function RoomModal({
   const selectedEntryForDay = selectedDateRaw
     ? [...localSchedule]
         .reverse()
-        .find((entry) => selectedDateRaw >= entry.startDate && selectedDateRaw <= entry.endDate) ?? selectedDayEntry
+        .find((entry) => isDateInEntryRange(selectedDateRaw, entry)) ?? selectedDayEntry
     : selectedDayEntry;
 
   const commitSchedule = (entries: StatusEntry[], msg: string) => {
@@ -133,10 +134,28 @@ export function RoomModal({
     start: string,
     end: string,
     excludeIds: Set<string> = new Set(),
+    _newStatus?: RoomStatus,
   ): StatusEntry | null => {
+    // For multi-day bookings the endDate is the checkout day
+    // (12 PM checkout / 2 PM check-in), so back-to-back bookings
+    // where one ends on the same day another starts are allowed.
+    const newIsMultiDay = start !== end;
+
     for (const entry of localSchedule) {
       if (excludeIds.has(entry.id)) continue;
-      if (start <= entry.endDate && entry.startDate <= end) {
+
+      const existingIsMultiDay = entry.startDate !== entry.endDate;
+
+      // Existing multi-day: its endDate is checkout, so new start must be < endDate to overlap
+      const startOverlaps = existingIsMultiDay
+        ? start < entry.endDate
+        : start <= entry.endDate;
+      // New multi-day: its endDate is checkout, so existing start must be < new end to overlap
+      const endOverlaps = newIsMultiDay
+        ? entry.startDate < end
+        : entry.startDate <= end;
+
+      if (startOverlaps && endOverlaps) {
         return entry;
       }
     }
@@ -169,7 +188,7 @@ export function RoomModal({
         .map((entry) => entry.id),
     );
 
-    const overlap = findOverlap(selectedDateRaw, selectedDateRaw, replacedIds);
+    const overlap = findOverlap(selectedDateRaw, selectedDateRaw, replacedIds, status);
     if (overlap) {
       const rangeLabel = formatRange(overlap.startDate, overlap.endDate);
       setDayOverlapError(
@@ -202,7 +221,7 @@ export function RoomModal({
       return;
     }
 
-    const overlap = findOverlap(rangeStart, rangeEnd);
+    const overlap = findOverlap(rangeStart, rangeEnd, new Set(), rangeStatus);
     if (overlap) {
       const rangeLabel = formatRange(overlap.startDate, overlap.endDate);
       setRangeOverlapError(
@@ -276,19 +295,7 @@ export function RoomModal({
               onClick={onClose}
               aria-label="Close"
             >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              <X size={16} />
             </button>
           </div>
         </div>
@@ -556,18 +563,7 @@ export function RoomModal({
                     className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--text-muted)] transition hover:bg-[var(--danger-soft)] hover:text-[var(--danger)]"
                     aria-label="Remove"
                   >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                    </svg>
+                    <Trash2 size={14} />
                   </button>
                 </div>
               ))}

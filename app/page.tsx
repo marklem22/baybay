@@ -13,6 +13,7 @@ import {
   getScheduleEntryForDate,
   getStatusForDate,
   type Room,
+  type RoomTypeRecord,
   type RoomStatus,
   type StatusEntry,
 } from "./lib/roomData";
@@ -45,6 +46,7 @@ export default function RoomsPage() {
   const [selectedDateRaw, setSelectedDateRaw] = useState<string | undefined>(undefined);
   const [selectedDayStatus, setSelectedDayStatus] = useState<RoomStatus | undefined>(undefined);
   const [selectedDayEntry, setSelectedDayEntry] = useState<StatusEntry | null>(null);
+  const [roomTypeOptions, setRoomTypeOptions] = useState<RoomTypeRecord[]>([]);
   const [filters, setFilters] = useState<FiltersState>({
     startDate: "",
     endDate: "",
@@ -72,6 +74,31 @@ export default function RoomsPage() {
 
     setFilters(defaultFilters);
     setAppliedFilters(defaultFilters);
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadRoomTypes = async () => {
+      try {
+        const response = await fetch("/api/room-types?active=1&usage=0", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Load failed with status ${response.status}`);
+        }
+
+        const payload = (await response.json()) as RoomTypeRecord[];
+        if (mounted && Array.isArray(payload)) {
+          setRoomTypeOptions(payload);
+        }
+      } catch (error) {
+        console.error("Failed to load room type options", error);
+      }
+    };
+
+    void loadRoomTypes();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const filteredRooms = useMemo(() => {
@@ -242,6 +269,7 @@ export default function RoomsPage() {
         startDate={filters.startDate}
         endDate={filters.endDate}
         roomType={filters.roomType}
+        roomTypeOptions={roomTypeOptions.map((type) => ({ key: type.key, label: type.label }))}
         status={filters.status}
         onChange={handleFilterChange}
         onApply={handleApplyFilters}

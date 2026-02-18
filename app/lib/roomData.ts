@@ -1,5 +1,5 @@
 export type RoomStatus = "available" | "occupied" | "maintenance" | "cleaning";
-export type RoomType = "single" | "double" | "suite" | "deluxe";
+export type RoomType = string;
 
 export interface Room {
   number: number;
@@ -9,6 +9,21 @@ export interface Room {
   floor?: number;
   capacity: number;
   zone?: string;
+}
+
+export interface RoomTypeRecord {
+  key: string;
+  label: string;
+  description?: string;
+  defaultCapacity: number;
+  amenities: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RoomTypeWithUsage extends RoomTypeRecord {
+  usageCount: number;
 }
 
 export interface Floor {
@@ -99,6 +114,21 @@ export function generateId(): string {
 }
 
 /**
+ * Check if a date string falls within a schedule entry's active range.
+ * For multi-day entries the endDate is the checkout day (12 PM checkout,
+ * room available by 2 PM), so it is excluded from the active range.
+ * Single-day entries keep their date inclusive.
+ */
+export function isDateInEntryRange(dateStr: string, entry: StatusEntry): boolean {
+  if (dateStr < entry.startDate) return false;
+  // Multi-day bookings: checkout day (endDate) is not active
+  if (entry.startDate !== entry.endDate) {
+    return dateStr < entry.endDate;
+  }
+  return dateStr <= entry.endDate;
+}
+
+/**
  * Resolve the status for a specific date given a list of schedule entries.
  * Later entries take priority. Falls back to defaultStatus.
  */
@@ -110,7 +140,7 @@ export function getStatusForDate(
   const dateStr = formatDateInput(date);
   for (let i = schedule.length - 1; i >= 0; i--) {
     const entry = schedule[i];
-    if (dateStr >= entry.startDate && dateStr <= entry.endDate) {
+    if (isDateInEntryRange(dateStr, entry)) {
       return entry.status;
     }
   }
@@ -128,7 +158,7 @@ export function getScheduleEntryForDate(
   const dateStr = formatDateInput(date);
   for (let i = schedule.length - 1; i >= 0; i--) {
     const entry = schedule[i];
-    if (dateStr >= entry.startDate && dateStr <= entry.endDate) {
+    if (isDateInEntryRange(dateStr, entry)) {
       return entry;
     }
   }

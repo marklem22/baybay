@@ -22,6 +22,8 @@ function LayoutInner({ children }: { children: ReactNode }) {
     activePage = "archived-rooms";
   } else if (pathname.startsWith("/rooms/new")) {
     activePage = "add-room";
+  } else if (pathname.startsWith("/room-type")) {
+    activePage = "room-type";
   } else if (pathname.startsWith("/tutorial")) {
     activePage = "tutorial";
   }

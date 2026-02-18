@@ -1,0 +1,58 @@
+[
+  {
+    "key": "single",
+    "label": "Single",
+    "description": "Compact room ideal for solo travelers.",
+    "defaultCapacity": 1,
+    "amenities": [
+      "Queen Bed",
+      "Wi-Fi",
+      "Private Bathroom"
+    ],
+    "isActive": true,
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "updatedAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "key": "double",
+    "label": "Double",
+    "description": "Comfortable room setup for two guests.",
+    "defaultCapacity": 2,
+    "amenities": [
+      "Two Beds",
+      "Wi-Fi",
+      "Work Desk"
+    ],
+    "isActive": true,
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "updatedAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "key": "suite",
+    "label": "Suite",
+    "description": "Premium multi-area room for longer stays.",
+    "defaultCapacity": 3,
+    "amenities": [
+      "Living Area",
+      "King Bed",
+      "Mini Bar"
+    ],
+    "isActive": true,
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "updatedAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "key": "deluxe",
+    "label": "Deluxe",
+    "description": "High-end room with added comfort and space.",
+    "defaultCapacity": 4,
+    "amenities": [
+      "King Bed",
+      "Balcony",
+      "Premium Toiletries"
+    ],
+    "isActive": true,
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "updatedAt": "2026-01-01T00:00:00.000Z"
+  }
+]

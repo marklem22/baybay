@@ -321,7 +321,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { logs?: unknown };
+    const body = (await request.json().catch(() => null)) as { logs?: unknown } | null;
+    if (body === null || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
+    }
+
     const rawLogs = body.logs;
 
     if (!Array.isArray(rawLogs) || rawLogs.length === 0) {

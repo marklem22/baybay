@@ -4,9 +4,8 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { DashboardHeader } from "../../components/DashboardHeader";
 import { useAppState } from "../../context/AppContext";
-import type { RoomStatus, RoomType } from "../../lib/roomData";
+import type { RoomStatus, RoomTypeRecord } from "../../lib/roomData";
 
-const roomTypes: RoomType[] = ["single", "double", "suite", "deluxe"];
 const roomStatuses: RoomStatus[] = ["available", "occupied", "maintenance", "cleaning"];
 const statusTone: Record<RoomStatus, string> = {
   available: "var(--success)",
@@ -18,7 +17,7 @@ const statusTone: Record<RoomStatus, string> = {
 interface RoomFormState {
   number: string;
   name: string;
-  type: RoomType;
+  type: string;
   status: RoomStatus;
   capacity: string;
   floor: string;
@@ -30,12 +29,13 @@ export default function NewRoomPage() {
   const [form, setForm] = useState<RoomFormState>({
     number: "",
     name: "",
-    type: "single",
+    type: "",
     status: "available",
     capacity: "1",
     floor: "",
     zone: "",
   });
+  const [roomTypes, setRoomTypes] = useState<RoomTypeRecord[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -67,7 +67,46 @@ export default function NewRoomPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const loadRoomTypes = async () => {
+      try {
+        const response = await fetch("/api/room-types?active=1", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Load failed with status ${response.status}`);
+        }
+
+        const payload = (await response.json()) as RoomTypeRecord[];
+        if (!mounted || !Array.isArray(payload)) return;
+
+        setRoomTypes(payload);
+        setForm((current) => {
+          const hasCurrent = payload.some((entry) => entry.key === current.type);
+          if (hasCurrent) return current;
+          return {
+            ...current,
+            type: payload[0]?.key ?? "",
+          };
+        });
+      } catch (loadError) {
+        console.error("Failed to load room types", loadError);
+      }
+    };
+
+    void loadRoomTypes();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const handleChange = (field: keyof RoomFormState, value: string) => {
+    if (field === "floor") {
+      const floorValue = value.replace(/\D/g, "").slice(0, 2);
+      setForm((current) => ({ ...current, floor: floorValue }));
+      return;
+    }
+
     setForm((current) => ({ ...current, [field]: value }));
   };
 
@@ -90,13 +129,18 @@ export default function NewRoomPage() {
       return;
     }
 
+    if (form.type.trim().length === 0) {
+      setError("Select a room type first.");
+      return;
+    }
+
     if (!Number.isInteger(capacity) || capacity <= 0) {
       setError("Capacity must be a positive whole number.");
       return;
     }
 
-    if (floor !== undefined && (!Number.isInteger(floor) || floor <= 0)) {
-      setError("Floor must be a positive whole number.");
+    if (floor !== undefined && (!Number.isInteger(floor) || floor <= 0 || floor > 99)) {
+      setError("Floor must be a whole number from 1 to 99.");
       return;
     }
 
@@ -134,7 +178,9 @@ export default function NewRoomPage() {
   };
 
   const previewName = form.name.trim() || "Untitled Room";
-  const previewType = form.type.charAt(0).toUpperCase() + form.type.slice(1);
+  const previewType =
+    roomTypes.find((entry) => entry.key === form.type)?.label ??
+    (form.type ? form.type.charAt(0).toUpperCase() + form.type.slice(1) : "Not selected");
   const previewStatus = form.status.charAt(0).toUpperCase() + form.status.slice(1);
   const previewZone = form.zone.trim() || "Unassigned Zone";
   const previewCapacity =
@@ -207,11 +253,15 @@ export default function NewRoomPage() {
               <select
                 value={form.type}
                 onChange={(event) => handleChange("type", event.target.value)}
+                disabled={roomTypes.length === 0}
                 className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2.5 text-sm outline-none focus:border-[var(--accent-blue)]"
               >
+                {roomTypes.length === 0 ? (
+                  <option value="">No room types available</option>
+                ) : null}
                 {roomTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  <option key={type.key} value={type.key}>
+                    {type.label}
                   </option>
                 ))}
               </select>
@@ -255,6 +305,7 @@ export default function NewRoomPage() {
               <input
                 type="number"
                 min={1}
+                max={99}
                 value={form.floor}
                 onChange={(event) => handleChange("floor", event.target.value)}
                 className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2.5 text-sm outline-none focus:border-[var(--accent-blue)]"
@@ -262,7 +313,7 @@ export default function NewRoomPage() {
               />
             </label>
 
-            <label className="flex flex-col gap-1.5 text-sm md:col-span-2">
+            <label className="flex flex-col gap-1.5 text-sm">
               <span className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
                 Zone
               </span>
@@ -290,7 +341,7 @@ export default function NewRoomPage() {
             <div className="flex flex-wrap justify-end gap-2 md:col-span-2">
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || roomTypes.length === 0}
                 className="rounded-md bg-[var(--accent-blue)] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? "Saving..." : "Save Room"}

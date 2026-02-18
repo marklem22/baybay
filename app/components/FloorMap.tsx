@@ -6,28 +6,56 @@ interface FloorMapProps {
   onRoomClick: (room: Room) => void;
 }
 
-const typeStyles: Record<Room["type"], { label: string; color: string; bg: string }> = {
-  single: {
-    label: "Single",
+interface RoomTypeStyle {
+  label: string;
+  color: string;
+  bg: string;
+}
+
+const typePalette: Array<{ color: string; bg: string }> = [
+  {
     color: "var(--accent-blue)",
     bg: "color-mix(in srgb, var(--accent-blue) 12%, transparent)",
   },
-  double: {
-    label: "Double",
+  {
     color: "var(--accent-cyan)",
     bg: "var(--accent-cyan-soft)",
   },
-  suite: {
-    label: "Suite",
+  {
     color: "var(--success)",
     bg: "var(--success-soft)",
   },
-  deluxe: {
-    label: "Deluxe",
+  {
     color: "var(--warning)",
     bg: "var(--warning-soft)",
   },
-};
+  {
+    color: "var(--danger)",
+    bg: "var(--danger-soft)",
+  },
+];
+
+function toTitle(value: string): string {
+  return value
+    .split("-")
+    .filter((part) => part.length > 0)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function buildTypeStyles(huts: Room[]): Record<string, RoomTypeStyle> {
+  const uniqueTypes = Array.from(new Set(huts.map((room) => room.type)));
+
+  return uniqueTypes.reduce<Record<string, RoomTypeStyle>>((acc, type, index) => {
+    const palette = typePalette[index % typePalette.length];
+    acc[type] = {
+      label: toTitle(type),
+      color: palette.color,
+      bg: palette.bg,
+    };
+    return acc;
+  }, {});
+}
 
 interface FloorGroup {
   id: string;
@@ -52,18 +80,14 @@ function resolveFloor(room: Room): number | null {
 }
 
 export function FloorMap({ huts, onRoomClick }: FloorMapProps) {
+  const typeStyles = buildTypeStyles(huts);
   const sortedHuts = [...huts].sort((a, b) => a.number - b.number);
   const typeCounts = huts.reduce(
     (acc, room) => {
-      acc[room.type] += 1;
+      acc[room.type] = (acc[room.type] ?? 0) + 1;
       return acc;
     },
-    {
-      single: 0,
-      double: 0,
-      suite: 0,
-      deluxe: 0,
-    } as Record<Room["type"], number>,
+    {} as Record<string, number>,
   );
   const grouped = sortedHuts.reduce(
     (acc, room) => {
@@ -117,14 +141,14 @@ export function FloorMap({ huts, onRoomClick }: FloorMapProps) {
             {huts.length} Rooms
           </span>
           <div className="flex flex-wrap gap-2 text-xs">
-            {(Object.keys(typeStyles) as Room["type"][]).map((type) => (
+            {Object.keys(typeStyles).map((type) => (
               <span
                 key={type}
                 className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 font-medium"
                 style={{ color: typeStyles[type].color, backgroundColor: typeStyles[type].bg }}
               >
                 <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: typeStyles[type].color }} />
-                {typeStyles[type].label}: {typeCounts[type]}
+                {typeStyles[type].label}: {typeCounts[type] ?? 0}
               </span>
             ))}
           </div>
