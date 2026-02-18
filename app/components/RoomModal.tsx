@@ -16,6 +16,8 @@ interface RoomModalProps {
   selectedDayEntry?: StatusEntry | null;
   schedule?: StatusEntry[];
   onUpdateSchedule?: (roomNumber: number, entries: StatusEntry[]) => void;
+  prefillRangeStart?: string;
+  prefillRangeEnd?: string;
 }
 
 const statusColor: Record<RoomStatus, string> = {
@@ -52,6 +54,8 @@ export function RoomModal({
   selectedDayEntry = null,
   schedule = [],
   onUpdateSchedule,
+  prefillRangeStart,
+  prefillRangeEnd,
 }: RoomModalProps) {
   const [localSchedule, setLocalSchedule] = useState<StatusEntry[]>(schedule);
   const [confirmMsg, setConfirmMsg] = useState<string | null>(null);
@@ -65,8 +69,18 @@ export function RoomModal({
   const [rangeStart, setRangeStart] = useState(todayStr);
   const [rangeEnd, setRangeEnd] = useState(todayStr);
   const [dayBookerName, setDayBookerName] = useState("");
+  const [dayCheckoutTime, setDayCheckoutTime] = useState("12:00");
   const [rangeBookerName, setRangeBookerName] = useState("");
   const [editorMode, setEditorMode] = useState<EditorMode>(selectedDateRaw ? "day" : "range");
+
+  // Pre-fill range from drag-to-schedule
+  useEffect(() => {
+    if (prefillRangeStart && prefillRangeEnd) {
+      setRangeStart(prefillRangeStart);
+      setRangeEnd(prefillRangeEnd);
+      setEditorMode("range");
+    }
+  }, [prefillRangeStart, prefillRangeEnd]);
 
   useEffect(() => {
     setLocalSchedule(schedule);
@@ -77,10 +91,20 @@ export function RoomModal({
     if (selectedDayEntry.bookedBy) {
       setDayBookerName(selectedDayEntry.bookedBy);
     }
+    if (selectedDayEntry.checkoutTime) {
+      setDayCheckoutTime(selectedDayEntry.checkoutTime);
+    }
   }, [selectedDateRaw, selectedDayEntry]);
 
   useEffect(() => {
     setEditorMode(selectedDateRaw ? "day" : "range");
+  }, [selectedDateRaw]);
+
+  useEffect(() => {
+    if (!selectedDateRaw) return;
+    setRangeStart(selectedDateRaw);
+    setRangeEnd(selectedDateRaw);
+    setRangeStatus("occupied");
   }, [selectedDateRaw]);
 
   useEffect(() => {
@@ -115,7 +139,6 @@ export function RoomModal({
 
   if (!isOpen || !room) return null;
 
-  const dayStatus = selectedDayStatus ?? room.status;
   const capacityLabel = `${room.capacity} Guest${room.capacity > 1 ? "s" : ""}`;
   const isFromTimeline = Boolean(selectedDate && selectedDateRaw);
   const selectedEntryForDay = selectedDateRaw
@@ -123,6 +146,7 @@ export function RoomModal({
         .reverse()
         .find((entry) => isDateInEntryRange(selectedDateRaw, entry)) ?? selectedDayEntry
     : selectedDayEntry;
+  const activeDayStatus = selectedEntryForDay?.status ?? selectedDayStatus ?? room.status;
 
   const commitSchedule = (entries: StatusEntry[], msg: string) => {
     setLocalSchedule(entries);
@@ -203,7 +227,9 @@ export function RoomModal({
       status,
       startDate: selectedDateRaw,
       endDate: selectedDateRaw,
-      ...(status === "occupied" ? { bookedBy: trimmedDayBooker } : {}),
+      ...(status === "occupied"
+        ? { bookedBy: trimmedDayBooker, checkoutTime: dayCheckoutTime }
+        : {}),
     };
 
     commitSchedule([...filtered, entry], `Set to ${statusLabel[status]}`);
@@ -361,15 +387,40 @@ export function RoomModal({
                 />
               </div>
 
+              {activeDayStatus === "occupied" ? (
+                <div className="mb-3">
+                  <label className="mb-1.5 block text-[0.65rem] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                    Checkout Time
+                  </label>
+                  <select
+                    value={dayCheckoutTime}
+                    onChange={(event) => setDayCheckoutTime(event.target.value)}
+                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-blue)]/40"
+                  >
+                    {Array.from({ length: 24 }, (_, h) => {
+                      const hour = String(h).padStart(2, "0");
+                      const label12 = h === 0 ? "12:00 AM" : h < 12 ? `${h}:00 AM` : h === 12 ? "12:00 PM" : `${h - 12}:00 PM`;
+                      return (
+                        <option key={hour} value={`${hour}:00`}>
+                          {label12}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              ) : null}
+
               <div className="grid grid-cols-2 gap-2">
                 {allStatuses.map((status) => {
-                  const isActive = status === dayStatus;
+                  const isActive = status === activeDayStatus;
                   return (
                     <button
                       key={status}
                       type="button"
                       onClick={() => {
-                        if (!isActive) handleSetDayStatus(status);
+                        if (status === "occupied" || !isActive) {
+                          handleSetDayStatus(status);
+                        }
                       }}
                       className={`relative flex items-center gap-2.5 rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition-all ${
                         isActive
@@ -548,6 +599,14 @@ export function RoomModal({
                       <div className="text-xs font-semibold capitalize">{statusLabel[entry.status]}</div>
                       <div className="text-[0.65rem] text-[var(--text-muted)]">
                         {formatRange(entry.startDate, entry.endDate)}
+                        {entry.startDate === entry.endDate && entry.checkoutTime ? (
+                          <span className="ml-1 text-[var(--text-secondary)]">
+                            &middot; Out at {(() => {
+                              const [h] = entry.checkoutTime.split(":").map(Number);
+                              return h === 0 ? "12:00 AM" : h < 12 ? `${h}:00 AM` : h === 12 ? "12:00 PM" : `${h - 12}:00 PM`;
+                            })()}
+                          </span>
+                        ) : null}
                       </div>
                       {entry.status === "occupied" && entry.bookedBy ? (
                         <div className="text-[0.65rem] text-[var(--text-secondary)]">

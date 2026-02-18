@@ -36,8 +36,16 @@ const quickStartItems = [
     description: "This is your home screen. You will do most daily work here.",
   },
   {
+    title: "Pick your Room Map view",
+    description: "Switch between By Floor, By Room Type, or All Rooms depending on what you need.",
+  },
+  {
     title: "Pick dates first",
     description: "Set check-in and check-out dates so room availability is accurate.",
+  },
+  {
+    title: "Set your theme preset",
+    description: "Open Settings and apply a light or dark preset that fits your team.",
   },
   {
     title: "Use Logs for history",
@@ -52,10 +60,11 @@ const roomViewGuides: TutorialItem[] = [
     description: "Start with the Room Map for a quick visual view of all rooms.",
     steps: [
       "Open the Rooms page.",
+      "Choose a view mode: By Floor, By Room Type, or All Rooms.",
       "Look at the room cards in the Room Map section.",
       "Click a room card to open its details.",
     ],
-    tip: "If you are in a hurry, check room number and type first.",
+    tip: "Use All Rooms when you want one flat list without floor grouping.",
     actionLabel: "Open Rooms",
     actionHref: "/",
   },
@@ -65,10 +74,10 @@ const roomViewGuides: TutorialItem[] = [
     description: "Use filters so you only see rooms that match your date and needs.",
     steps: [
       "Set your check-in and check-out dates.",
-      "Choose room type if needed.",
+      "Choose room type and status if needed.",
       "Click Apply to refresh the list.",
     ],
-    tip: "Use Reset if results look odd and you want to start fresh.",
+    tip: "Available means available for the whole date range. Other statuses match any day in range.",
     actionLabel: "Go to Filters",
     actionHref: "/",
   },
@@ -77,11 +86,13 @@ const roomViewGuides: TutorialItem[] = [
     title: "Check day-by-day availability",
     description: "Use the timeline when availability changes across different dates.",
     steps: [
+      "Pick a timeline window: 7 Days, Current Month, or 2 Months.",
       "Scroll to Availability Timeline.",
-      "Find a room row and choose a date cell.",
-      "Click the cell to open quick status update.",
+      "Click one date cell to edit a single day.",
+      "Click and drag across dates in one room row to prefill a date range.",
+      "Release mouse to open the modal with the range ready.",
     ],
-    tip: "Timeline is best for date-specific changes, not just overall room status.",
+    tip: "Drag range selection is the fastest way to schedule multi-day occupied, maintenance, or cleaning blocks.",
     actionLabel: "Open Timeline",
     actionHref: "/",
   },
@@ -127,11 +138,25 @@ const roomManagementGuides: TutorialItem[] = [
     actionLabel: "Manage Rooms",
     actionHref: "/",
   },
+  {
+    step: 7,
+    title: "Adjust theme presets",
+    description: "Use Settings to switch appearance presets for better readability.",
+    steps: [
+      "Open Settings from the sidebar.",
+      "Click Apply on a preset you want to use.",
+      "Use Edit if you want to adjust the preset colors.",
+      "Save changes to keep your custom theme.",
+    ],
+    tip: "Theme presets change colors only. Keep one team standard to avoid confusion during shifts.",
+    actionLabel: "Open Settings",
+    actionHref: "/settings",
+  },
 ];
 
 const logsGuides: TutorialItem[] = [
   {
-    step: 7,
+    step: 8,
     title: "Review activity history",
     description: "Logs show what was changed, when it was changed, and which room it affected.",
     steps: [
@@ -144,7 +169,7 @@ const logsGuides: TutorialItem[] = [
     actionHref: "/logs",
   },
   {
-    step: 8,
+    step: 9,
     title: "Archive or clean up logs",
     description: "Move old records to the archive when needed using bulk actions in Logs.",
     steps: [
@@ -168,7 +193,7 @@ const tutorialSections: TutorialSectionMeta[] = [
   {
     id: "room_monitoring",
     title: "Room Monitoring",
-    subtitle: "Use these steps to check room availability and update schedule status by date.",
+    subtitle: "Use these steps to filter rooms, switch map views, and update schedule status by date.",
   },
   {
     id: "room_setup",
@@ -315,6 +340,26 @@ export default function TutorialPage() {
           <p className="mt-2 text-xs leading-relaxed text-[var(--text-secondary)] sm:text-sm">
             Use the room map for quick room lookup. Use the timeline when status changes day by day,
             such as occupied for a short date range.
+          </p>
+        </details>
+
+        <details className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2">
+          <summary className="cursor-pointer text-xs font-semibold sm:text-sm">
+            Which Room Map view should I use?
+          </summary>
+          <p className="mt-2 text-xs leading-relaxed text-[var(--text-secondary)] sm:text-sm">
+            Use By Floor for operations by level, By Room Type for inventory balance checks, and All
+            Rooms when you want one continuous list without groups.
+          </p>
+        </details>
+
+        <details className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2">
+          <summary className="cursor-pointer text-xs font-semibold sm:text-sm">
+            How do I schedule multiple dates quickly from the timeline?
+          </summary>
+          <p className="mt-2 text-xs leading-relaxed text-[var(--text-secondary)] sm:text-sm">
+            Click and drag across dates in the same room row, then release. The room modal opens with
+            the date range prefilled so you can set one status for the full range.
           </p>
         </details>
 

@@ -1,1 +1,75 @@
-{}
+{
+  "1": [
+    {
+      "id": "1771395014514-vhc4qx6",
+      "status": "cleaning",
+      "startDate": "2026-02-26",
+      "endDate": "2026-03-01"
+    }
+  ],
+  "2": [
+    {
+      "id": "1771395021944-l30bxjd",
+      "status": "maintenance",
+      "startDate": "2026-02-27",
+      "endDate": "2026-03-03"
+    }
+  ],
+  "3": [
+    {
+      "id": "1771395660520-o5z4ziv",
+      "status": "occupied",
+      "startDate": "2026-02-19",
+      "endDate": "2026-02-27",
+      "bookedBy": "h"
+    },
+    {
+      "id": "1771395669260-kvhbx8a",
+      "status": "cleaning",
+      "startDate": "2026-03-01",
+      "endDate": "2026-03-07"
+    }
+  ],
+  "5": [
+    {
+      "id": "1771393772610-6q638ay",
+      "status": "occupied",
+      "startDate": "2026-02-20",
+      "endDate": "2026-02-28",
+      "bookedBy": "hi"
+    },
+    {
+      "id": "1771394604750-yp00ayc",
+      "status": "occupied",
+      "startDate": "2026-02-28",
+      "endDate": "2026-03-02",
+      "bookedBy": "r"
+    }
+  ],
+  "6": [
+    {
+      "id": "1771395252336-f7x58jt",
+      "status": "occupied",
+      "startDate": "2026-02-25",
+      "endDate": "2026-03-02",
+      "bookedBy": "gfhf"
+    }
+  ],
+  "7": [
+    {
+      "id": "1771395260552-zk0tx7b",
+      "status": "maintenance",
+      "startDate": "2026-02-26",
+      "endDate": "2026-03-03"
+    }
+  ],
+  "8": [
+    {
+      "id": "1771395644401-j8tjz6z",
+      "status": "occupied",
+      "startDate": "2026-02-25",
+      "endDate": "2026-03-07",
+      "bookedBy": "tst"
+    }
+  ]
+}

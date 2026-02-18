@@ -1,10 +1,15 @@
+"use client";
+
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import type { Room } from "../lib/roomData";
 
 interface FloorMapProps {
   huts: Room[];
   onRoomClick: (room: Room) => void;
 }
+
+type RoomMapView = "floor" | "type" | "all";
 
 interface RoomTypeStyle {
   label: string;
@@ -33,6 +38,12 @@ const typePalette: Array<{ color: string; bg: string }> = [
     color: "var(--danger)",
     bg: "var(--danger-soft)",
   },
+];
+
+const roomMapViews: Array<{ id: RoomMapView; label: string }> = [
+  { id: "floor", label: "By Floor" },
+  { id: "type", label: "By Room Type" },
+  { id: "all", label: "All Rooms" },
 ];
 
 function toTitle(value: string): string {
@@ -79,16 +90,7 @@ function resolveFloor(room: Room): number | null {
   return null;
 }
 
-export function FloorMap({ huts, onRoomClick }: FloorMapProps) {
-  const typeStyles = buildTypeStyles(huts);
-  const sortedHuts = [...huts].sort((a, b) => a.number - b.number);
-  const typeCounts = huts.reduce(
-    (acc, room) => {
-      acc[room.type] = (acc[room.type] ?? 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>,
-  );
+function buildFloorGroups(sortedHuts: Room[]): FloorGroup[] {
   const grouped = sortedHuts.reduce(
     (acc, room) => {
       const floor = resolveFloor(room);
@@ -120,6 +122,59 @@ export function FloorMap({ huts, onRoomClick }: FloorMapProps) {
     });
   }
 
+  return floorGroups;
+}
+
+function buildTypeGroups(sortedHuts: Room[], typeStyles: Record<string, RoomTypeStyle>): FloorGroup[] {
+  const byType = sortedHuts.reduce((acc, room) => {
+    const current = acc.get(room.type) ?? [];
+    current.push(room);
+    acc.set(room.type, current);
+    return acc;
+  }, new Map<string, Room[]>());
+
+  return Array.from(byType.entries())
+    .sort((a, b) => {
+      const aLabel = typeStyles[a[0]]?.label ?? toTitle(a[0]);
+      const bLabel = typeStyles[b[0]]?.label ?? toTitle(b[0]);
+      return aLabel.localeCompare(bLabel);
+    })
+    .map(([type, rooms]) => ({
+      id: `type-${type}`,
+      label: `${typeStyles[type]?.label ?? toTitle(type)} Rooms`,
+      rooms,
+    }));
+}
+
+export function FloorMap({ huts, onRoomClick }: FloorMapProps) {
+  const [viewMode, setViewMode] = useState<RoomMapView>("floor");
+  const typeStyles = useMemo(() => buildTypeStyles(huts), [huts]);
+  const sortedHuts = useMemo(() => [...huts].sort((a, b) => a.number - b.number), [huts]);
+  const typeCounts = useMemo(
+    () =>
+      huts.reduce(
+        (acc, room) => {
+          acc[room.type] = (acc[room.type] ?? 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      ),
+    [huts],
+  );
+  const sortedTypeKeys = useMemo(
+    () => Object.keys(typeStyles).sort((a, b) => typeStyles[a].label.localeCompare(typeStyles[b].label)),
+    [typeStyles],
+  );
+  const groups = useMemo(() => {
+    if (viewMode === "all") {
+      return [{ id: "all-rooms", label: "All Rooms", rooms: sortedHuts }];
+    }
+    if (viewMode === "type") {
+      return buildTypeGroups(sortedHuts, typeStyles);
+    }
+    return buildFloorGroups(sortedHuts);
+  }, [sortedHuts, typeStyles, viewMode]);
+
   return (
     <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
@@ -141,7 +196,7 @@ export function FloorMap({ huts, onRoomClick }: FloorMapProps) {
             {huts.length} Rooms
           </span>
           <div className="flex flex-wrap gap-2 text-xs">
-            {Object.keys(typeStyles).map((type) => (
+            {sortedTypeKeys.map((type) => (
               <span
                 key={type}
                 className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 font-medium"
@@ -154,45 +209,68 @@ export function FloorMap({ huts, onRoomClick }: FloorMapProps) {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          {floorGroups.map((group) => (
-            <div key={group.id} className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] p-3">
-              <div className="mb-3 flex items-center justify-between border-b border-[var(--border)] pb-2">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-primary)]">
-                  {group.label}
-                </h3>
-                <span className="font-mono text-[0.72rem] text-[var(--text-secondary)]">
-                  {group.rooms.length} room{group.rooms.length === 1 ? "" : "s"}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] gap-2">
-                {group.rooms.map((room) => (
-                  <button
-                    key={room.number}
-                    type="button"
-                    onClick={() => onRoomClick(room)}
-                    className="flex aspect-square flex-col items-center justify-center rounded-lg border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-                    style={{
-                      borderColor: typeStyles[room.type].color,
-                      backgroundColor: typeStyles[room.type].bg,
-                    }}
-                  >
-                    <span className="font-mono text-base font-semibold">{room.number}</span>
-                    {room.name ? (
-                      <span className="max-w-[70px] truncate text-[0.55rem] font-medium text-[var(--text-primary)]">
-                        {room.name}
-                      </span>
-                    ) : null}
-                    <span className="text-[0.6rem] font-medium uppercase text-[var(--text-muted)]">
-                      {room.type}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
+        <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-[var(--border)] pb-3">
+          {roomMapViews.map((view) => (
+            <button
+              key={view.id}
+              type="button"
+              onClick={() => setViewMode(view.id)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                viewMode === view.id
+                  ? "bg-[var(--accent-blue)] text-white"
+                  : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              {view.label}
+            </button>
           ))}
         </div>
+
+        {huts.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-8 text-center text-sm text-[var(--text-muted)]">
+            No rooms match the current filters.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {groups.map((group) => (
+              <div key={group.id} className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] p-3">
+                <div className="mb-3 flex items-center justify-between border-b border-[var(--border)] pb-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-primary)]">
+                    {group.label}
+                  </h3>
+                  <span className="font-mono text-[0.72rem] text-[var(--text-secondary)]">
+                    {group.rooms.length} room{group.rooms.length === 1 ? "" : "s"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] gap-2">
+                  {group.rooms.map((room) => (
+                    <button
+                      key={room.number}
+                      type="button"
+                      onClick={() => onRoomClick(room)}
+                      className="flex aspect-square flex-col items-center justify-center rounded-lg border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                      style={{
+                        borderColor: typeStyles[room.type]?.color ?? "var(--border)",
+                        backgroundColor: typeStyles[room.type]?.bg ?? "var(--bg-card)",
+                      }}
+                    >
+                      <span className="font-mono text-base font-semibold">{room.number}</span>
+                      {room.name ? (
+                        <span className="max-w-[70px] truncate text-[0.55rem] font-medium text-[var(--text-primary)]">
+                          {room.name}
+                        </span>
+                      ) : null}
+                      <span className="text-[0.6rem] font-medium uppercase text-[var(--text-muted)]">
+                        {typeStyles[room.type]?.label ?? toTitle(room.type)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

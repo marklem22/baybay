@@ -8,7 +8,7 @@ import { Toast } from "../components/Toast";
 import type { ReactNode } from "react";
 
 function LayoutInner({ children }: { children: ReactNode }) {
-  const { theme, toast, setToast, handleToggleTheme } = useAppState();
+  const { toast, setToast } = useAppState();
   const pathname = usePathname();
   const handleToastClose = useCallback(() => {
     setToast(null);
@@ -26,15 +26,13 @@ function LayoutInner({ children }: { children: ReactNode }) {
     activePage = "room-type";
   } else if (pathname.startsWith("/tutorial")) {
     activePage = "tutorial";
+  } else if (pathname.startsWith("/settings")) {
+    activePage = "settings";
   }
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar
-        activePage={activePage}
-        theme={theme}
-        onToggleTheme={handleToggleTheme}
-      />
+      <Sidebar activePage={activePage} />
       <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
         {children}
       </main>

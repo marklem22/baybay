@@ -38,6 +38,7 @@ export interface StatusEntry {
   startDate: string; // YYYY-MM-DD
   endDate: string;   // YYYY-MM-DD
   bookedBy?: string;
+  checkoutTime?: string; // HH:mm — used for single-day (hourly) bookings
 }
 
 export type ActivityLogAction = "schedule_added" | "schedule_removed";

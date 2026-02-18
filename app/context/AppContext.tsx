@@ -20,6 +20,79 @@ import hutsData from "../lib/huts.json";
 
 type Theme = "light" | "dark";
 
+export interface ThemeColors {
+  bgPrimary: string;
+  bgSecondary: string;
+  bgCard: string;
+  accentBlue: string;
+  accentPurple: string;
+  accentCyan: string;
+  success: string;
+  warning: string;
+  danger: string;
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+}
+
+export interface ThemePreset {
+  id: string;
+  name: string;
+  isBuiltIn: boolean;
+  colors: ThemeColors;
+  font: string;
+}
+
+export interface ThemeSettings {
+  activePreset: string;
+  presets: ThemePreset[];
+}
+
+/** Apply a preset's CSS variables and keep a fixed app font. */
+function applyPresetToDOM(preset: ThemePreset) {
+  const root = document.documentElement;
+  const c = preset.colors;
+
+  root.style.setProperty("--bg-primary", c.bgPrimary);
+  root.style.setProperty("--bg-secondary", c.bgSecondary);
+  root.style.setProperty("--bg-card", c.bgCard);
+  root.style.setProperty("--accent-blue", c.accentBlue);
+  root.style.setProperty("--accent-purple", c.accentPurple);
+  root.style.setProperty("--accent-cyan", c.accentCyan);
+  root.style.setProperty("--success", c.success);
+  root.style.setProperty("--warning", c.warning);
+  root.style.setProperty("--danger", c.danger);
+  root.style.setProperty("--text-primary", c.textPrimary);
+  root.style.setProperty("--text-secondary", c.textSecondary);
+  root.style.setProperty("--text-muted", c.textMuted);
+
+  // Derived soft colours
+  const hexToRgb = (hex: string) => {
+    const r = Number.parseInt(hex.slice(1, 3), 16);
+    const g = Number.parseInt(hex.slice(3, 5), 16);
+    const b = Number.parseInt(hex.slice(5, 7), 16);
+    return `${r}, ${g}, ${b}`;
+  };
+  root.style.setProperty("--success-soft", `rgba(${hexToRgb(c.success)}, 0.1)`);
+  root.style.setProperty("--danger-soft", `rgba(${hexToRgb(c.danger)}, 0.1)`);
+  root.style.setProperty("--warning-soft", `rgba(${hexToRgb(c.warning)}, 0.1)`);
+  root.style.setProperty("--accent-cyan-soft", `rgba(${hexToRgb(c.accentCyan)}, 0.1)`);
+  root.style.setProperty("--hover", `rgba(${hexToRgb(c.accentBlue)}, 0.08)`);
+  root.style.setProperty("--border", `rgba(${hexToRgb(c.textSecondary)}, 0.08)`);
+
+  // Keep app font fixed to default.
+  root.style.setProperty("--font-sans", '"Inter", system-ui, -apple-system, sans-serif');
+}
+
+/** Determine if hex color is perceived as "light" using luminance */
+function isLightColor(hex: string): boolean {
+  const r = Number.parseInt(hex.slice(1, 3), 16);
+  const g = Number.parseInt(hex.slice(3, 5), 16);
+  const b = Number.parseInt(hex.slice(5, 7), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5;
+}
+
 interface ActivityLogCreatePayload {
   roomNumber: number;
   action: "schedule_added" | "schedule_removed";
@@ -124,10 +197,12 @@ interface AppState {
   toast: string | null;
   dateTime: string;
   stats: { label: string; value: number; subtitle: string; icon: string; accentColor?: string }[];
+  themeSettings: ThemeSettings | null;
   setToast: (msg: string | null) => void;
-  handleToggleTheme: () => void;
   refreshHuts: () => Promise<void>;
   handleUpdateSchedule: (roomNumber: number, entries: StatusEntry[]) => void;
+  handleUpdateSettings: (settings: ThemeSettings) => Promise<void>;
+  handleApplyPreset: (presetId: string) => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -143,9 +218,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [huts, setHuts] = useState<Room[]>(initialHuts);
   const [schedules, setSchedules] = useState<Record<number, StatusEntry[]>>({});
   const [toast, setToast] = useState<string | null>(null);
-  const [theme, setTheme] = useState<Theme>("dark");
-  const [hasHydratedTheme, setHasHydratedTheme] = useState(false);
+  const [theme, setTheme] = useState<Theme>("light");
   const [dateTime, setDateTime] = useState("");
+  const [themeSettings, setThemeSettings] = useState<ThemeSettings | null>(null);
 
   const { startDayOffset: timelineStartOffset, spanDays: timelineSpanDays } = getTimelineWindow(
     new Date(),
@@ -210,25 +285,68 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Theme hydration
   useEffect(() => {
-    const storedTheme = window.localStorage.getItem("theme");
-    if (storedTheme === "light" || storedTheme === "dark") {
-      setTheme(storedTheme);
-    } else {
-      const preferredTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
-      setTheme(preferredTheme);
-    }
-    setHasHydratedTheme(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hasHydratedTheme) return;
     document.documentElement.setAttribute("data-theme", theme);
     window.localStorage.setItem("theme", theme);
-  }, [theme, hasHydratedTheme]);
+  }, [theme]);
+
+  // Load theme settings from API
+  useEffect(() => {
+    let isMounted = true;
+    const loadSettings = async () => {
+      try {
+        const response = await fetch("/api/settings", { cache: "no-store" });
+        if (!response.ok) throw new Error("Failed to load settings");
+        const data = (await response.json()) as ThemeSettings;
+        if (isMounted) {
+          setThemeSettings(data);
+          const active = data.presets.find((p) => p.id === data.activePreset);
+          if (active) {
+            applyPresetToDOM(active);
+            // Determine if this preset is a "light" or "dark" one
+            const isLight = isLightColor(active.colors.bgPrimary);
+            setTheme(isLight ? "light" : "dark");
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load theme settings", error);
+      }
+    };
+    void loadSettings();
+    return () => { isMounted = false; };
+  }, []);
+
+  const handleApplyPreset = useCallback((presetId: string) => {
+    if (!themeSettings) return;
+    const preset = themeSettings.presets.find((p) => p.id === presetId);
+    if (!preset) return;
+    applyPresetToDOM(preset);
+    const isLight = isLightColor(preset.colors.bgPrimary);
+    setTheme(isLight ? "light" : "dark");
+    setThemeSettings((prev) => prev ? { ...prev, activePreset: presetId } : prev);
+  }, [themeSettings]);
+
+  const handleUpdateSettings = useCallback(async (settings: ThemeSettings) => {
+    setThemeSettings(settings);
+    const active = settings.presets.find((p) => p.id === settings.activePreset);
+    if (active) {
+      applyPresetToDOM(active);
+      const isLight = isLightColor(active.colors.bgPrimary);
+      setTheme(isLight ? "light" : "dark");
+    }
+    try {
+      const response = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      });
+      if (!response.ok) throw new Error("Save failed");
+      setToast("Theme settings saved");
+    } catch (error) {
+      console.error("Failed to save theme settings", error);
+      setToast("Failed to save theme settings");
+    }
+  }, []);
 
   const stats = useMemo(() => {
     const available = huts.filter((r) => r.status === "available").length;
@@ -243,10 +361,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       { label: "Cleaning", value: cleaning, subtitle: "Being prepared", icon: "CL", accentColor: "var(--accent-cyan)" },
     ];
   }, [huts]);
-
-  const handleToggleTheme = useCallback(() => {
-    setTheme((current) => (current === "dark" ? "light" : "dark"));
-  }, []);
 
   const handleUpdateSchedule = useCallback((roomNumber: number, entries: StatusEntry[]) => {
     const previousEntries = schedules[roomNumber] ?? [];
@@ -317,10 +431,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toast,
       dateTime,
       stats,
+      themeSettings,
       setToast,
-      handleToggleTheme,
       refreshHuts,
       handleUpdateSchedule,
+      handleUpdateSettings,
+      handleApplyPreset,
     }),
     [
       huts,
@@ -331,9 +447,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toast,
       dateTime,
       stats,
-      handleToggleTheme,
+      themeSettings,
       refreshHuts,
       handleUpdateSchedule,
+      handleUpdateSettings,
+      handleApplyPreset,
     ]
   );
 

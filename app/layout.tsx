@@ -20,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="light">
       <body className="bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans antialiased">
         <ClientLayout>{children}</ClientLayout>
       </body>

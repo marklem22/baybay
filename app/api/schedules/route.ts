@@ -23,6 +23,10 @@ function isBookerName(value: unknown): value is string {
   );
 }
 
+function isCheckoutTime(value: unknown): value is string {
+  return typeof value === "string" && /^\d{2}:\d{2}$/.test(value);
+}
+
 function isStatusEntry(value: unknown): value is StatusEntry {
   if (!value || typeof value !== "object") {
     return false;
@@ -36,7 +40,8 @@ function isStatusEntry(value: unknown): value is StatusEntry {
     allowedStatuses.includes(entry.status as RoomStatus) &&
     isDateInput(entry.startDate) &&
     isDateInput(entry.endDate) &&
-    (entry.bookedBy === undefined || isBookerName(entry.bookedBy))
+    (entry.bookedBy === undefined || isBookerName(entry.bookedBy)) &&
+    (entry.checkoutTime === undefined || isCheckoutTime(entry.checkoutTime))
   );
 }
 
@@ -48,6 +53,7 @@ function normalizeEntries(entries: StatusEntry[]): StatusEntry[] {
       ...(entry.status === "occupied" && trimmedBooker.length > 0
         ? { bookedBy: trimmedBooker }
         : {}),
+      ...(entry.checkoutTime ? { checkoutTime: entry.checkoutTime } : {}),
     };
   });
 

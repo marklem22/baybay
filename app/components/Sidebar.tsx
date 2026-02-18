@@ -10,16 +10,13 @@ import {
   HouseIcon,
   ListCollapseIcon,
   MenuIcon,
-  Moon,
   NotebookIcon,
   PlusCircleIcon,
-  Sun,
+  Settings,
 } from "lucide-react";
 
 interface SidebarProps {
   activePage: string;
-  theme: "light" | "dark";
-  onToggleTheme: () => void;
 }
 
 const navItems = [
@@ -59,17 +56,15 @@ const navItems = [
     href: "/tutorial",
     icon: <FileQuestion size={18} />,
   },
+  {
+    id: "settings",
+    label: "Settings",
+    href: "/settings",
+    icon: <Settings size={18} />,
+  },
 ];
 
-const SunIcon = () => (
-  <Sun size={18}/>
-);
-
-const MoonIcon = () => (
-  <Moon size={18}/>
-);
-
-export function Sidebar({ activePage, theme, onToggleTheme }: SidebarProps) {
+export function Sidebar({ activePage }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -142,21 +137,6 @@ export function Sidebar({ activePage, theme, onToggleTheme }: SidebarProps) {
 
         {/* Bottom actions */}
         <div className="flex flex-col gap-2 border-t border-[var(--border)] px-3 py-4">
-          {/* Theme toggle */}
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[0.875rem] font-medium text-[var(--text-secondary)] transition-all duration-200 hover:bg-[var(--hover)] hover:text-[var(--text-primary)]"
-          >
-            <span className="shrink-0">
-              {theme === "dark" ? <SunIcon /> : <MoonIcon />}
-            </span>
-            {!collapsed && (
-              <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
-            )}
-          </button>
-
           {/* Collapse toggle - hidden on mobile */}
           <button
             type="button"

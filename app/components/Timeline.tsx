@@ -16,6 +16,7 @@ interface TimelineProps {
   schedules: Record<number, StatusEntry[]>;
   timelineStartOffset: number;
   onRoomClick: (room: Room, dayIndex: number, status: RoomStatus) => void;
+  onRangeSelect?: (room: Room, startDayIndex: number, endDayIndex: number) => void;
 }
 
 const statusColor: Record<RoomStatus, string> = {
@@ -54,6 +55,33 @@ const timelineWindows: TimelineWindowConfig[] = [
   { id: "current_month", label: "Current Month" },
   { id: "two_months", label: "2 Months" },
 ];
+
+const markerPillSizing: Record<
+  TimelineWindow,
+  { width: string; fontSize: string; paddingX: string; paddingY: string; gap: string }
+> = {
+  seven_days: {
+    width: "2.5rem",
+    fontSize: "0.56rem",
+    paddingX: "0.25rem",
+    paddingY: "0.16rem",
+    gap: "2px",
+  },
+  current_month: {
+    width: "2.15rem",
+    fontSize: "0.5rem",
+    paddingX: "0.2rem",
+    paddingY: "0.12rem",
+    gap: "1px",
+  },
+  two_months: {
+    width: "1.9rem",
+    fontSize: "0.44rem",
+    paddingX: "0.12rem",
+    paddingY: "0.08rem",
+    gap: "1px",
+  },
+};
 
 function startOfDay(value: Date): Date {
   const copy = new Date(value);
@@ -108,13 +136,17 @@ function buildWindowDates(
   return buildMonthSpanWindow(currentDay, monthOffset, 2);
 }
 
-export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRoomClick }: TimelineProps) {
+export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRoomClick, onRangeSelect }: TimelineProps) {
   const [windowMode, setWindowMode] = useState<TimelineWindow>("seven_days");
   const [sevenDayOffset, setSevenDayOffset] = useState(0);
   const [monthOffset, setMonthOffset] = useState(0);
   const [hoveredCell, setHoveredCell] = useState<{ room: number; day: number } | null>(null);
   const [slideDirection, setSlideDirection] = useState<SlideDirection>(null);
   const [slideToken, setSlideToken] = useState(0);
+
+  // Drag-to-schedule state
+  const dragRef = useRef<{ room: Room; startDay: number } | null>(null);
+  const [dragRange, setDragRange] = useState<{ roomNumber: number; startDay: number; endDay: number } | null>(null);
 
   // Track previous statuses for flip animation
   const prevTimelineRef = useRef<Record<number, RoomStatus[]>>({});
@@ -154,6 +186,23 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
     }
   }, [flippingCells, timeline]);
 
+  // Global mouseup to finalize drag-to-schedule
+  useEffect(() => {
+    const handleMouseUp = () => {
+      const drag = dragRef.current;
+      const range = dragRange;
+      if (drag && range && range.startDay !== range.endDay && onRangeSelect) {
+        const minDay = Math.min(range.startDay, range.endDay);
+        const maxDay = Math.max(range.startDay, range.endDay);
+        onRangeSelect(drag.room, minDay, maxDay);
+      }
+      dragRef.current = null;
+      setDragRange(null);
+    };
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => window.removeEventListener("mouseup", handleMouseUp);
+  }, [dragRange, onRangeSelect]);
+
   const today = startOfDay(new Date());
   const { dates, startOffset } = buildWindowDates(windowMode, today, monthOffset, sevenDayOffset);
   const days = dates.length;
@@ -162,6 +211,7 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
   const timelineMinWidth = roomColumnWidth + days * dayColumnMinWidth;
   const timelineGridTemplate = `${roomColumnWidth}px repeat(${days}, minmax(0, 1fr))`;
   const stickyRoomColumnStyle = { minWidth: `${roomColumnWidth}px` };
+  const pillSizing = markerPillSizing[windowMode];
 
   const handleWindowSelect = (nextMode: TimelineWindow) => {
     setSlideDirection(null);
@@ -374,14 +424,37 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
                   );
                   const status = timelineStatus ?? scheduleStatus;
 
-                  // Detect check-in / check-out markers
+                  // Detect check-in / check-out markers per status type
                   const cellDateStr = formatDateInput(date);
-                  const isCheckIn = roomSchedule.some(
-                    (e) => e.startDate === cellDateStr && e.startDate !== e.endDate,
+                  // Occupied bookings → IN / OUT
+                  const isOccupiedCheckIn = roomSchedule.some(
+                    (e) => e.status === "occupied" && e.startDate === cellDateStr && e.startDate !== e.endDate,
                   );
-                  const isCheckOut = roomSchedule.some(
-                    (e) => e.endDate === cellDateStr && e.startDate !== e.endDate,
+                  const isOccupiedCheckOut = roomSchedule.some(
+                    (e) => e.status === "occupied" && e.endDate === cellDateStr && e.startDate !== e.endDate,
                   );
+                  // Maintenance bookings → START / END
+                  const isMaintStart = roomSchedule.some(
+                    (e) => e.status === "maintenance" && e.startDate === cellDateStr && e.startDate !== e.endDate,
+                  );
+                  const isMaintEnd = roomSchedule.some(
+                    (e) => e.status === "maintenance" && e.endDate === cellDateStr && e.startDate !== e.endDate,
+                  );
+                  // Cleaning bookings → START / END
+                  const isCleanStart = roomSchedule.some(
+                    (e) => e.status === "cleaning" && e.startDate === cellDateStr && e.startDate !== e.endDate,
+                  );
+                  const isCleanEnd = roomSchedule.some(
+                    (e) => e.status === "cleaning" && e.endDate === cellDateStr && e.startDate !== e.endDate,
+                  );
+                  // Any multi-day marker on this cell?
+                  const hasAnyMarker = isOccupiedCheckIn || isOccupiedCheckOut || isMaintStart || isMaintEnd || isCleanStart || isCleanEnd;
+                  // Single-day (hourly) booking: same start & end date
+                  const singleDayEntry = roomSchedule.find(
+                    (e) => e.startDate === cellDateStr && e.endDate === cellDateStr,
+                  );
+                  const isSingleDay = Boolean(singleDayEntry);
+                  const singleDayStatus = singleDayEntry?.status;
                   const cellKey = `${room.number}-${timelineDayOffset}`;
                   const isFlipping = flippingCells.has(cellKey);
                   const isHovered =
@@ -404,42 +477,149 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
                     day: "numeric",
                   });
 
+                  // Drag highlight
+                  const isDragHighlight =
+                    dragRange &&
+                    dragRange.roomNumber === room.number &&
+                    timelineDayOffset >= Math.min(dragRange.startDay, dragRange.endDay) &&
+                    timelineDayOffset <= Math.max(dragRange.startDay, dragRange.endDay);
+
+                  // Determine marker accent color for cell tint
+                  const markerAccent = (isOccupiedCheckIn || isOccupiedCheckOut)
+                    ? "var(--danger)"
+                    : (isMaintStart || isMaintEnd)
+                      ? "var(--warning)"
+                      : (isCleanStart || isCleanEnd)
+                        ? "var(--accent-cyan)"
+                        : singleDayStatus === "occupied"
+                          ? "var(--danger)"
+                          : singleDayStatus === "maintenance"
+                            ? "var(--warning)"
+                            : singleDayStatus === "cleaning"
+                              ? "var(--accent-cyan)"
+                              : null;
+                  const hasCellTint = isSingleDay || hasAnyMarker;
+
                   return (
                     <div
                       key={cellKey}
-                      className={`timeline-cell relative cursor-pointer transition-all duration-100 hover:brightness-95 ${isFlipping ? "cell-flip" : ""}`}
+                      className={`timeline-cell relative cursor-pointer select-none transition-all duration-100 hover:brightness-95 ${isFlipping ? "cell-flip" : ""}`}
                       style={{
-                        backgroundColor: (isCheckIn || isCheckOut)
-                          ? "color-mix(in srgb, var(--danger) 30%, var(--bg-card))"
-                          : statusBg[status],
+                        backgroundColor: isDragHighlight
+                          ? "color-mix(in srgb, gray 30%, var(--bg-card))"
+                          : (hasCellTint && markerAccent)
+                            ? `color-mix(in srgb, ${markerAccent} 30%, var(--bg-card))`
+                            : statusBg[status],
                         minHeight: "34px",
-                        boxShadow: isHovered
-                          ? `inset 0 0 0 1px ${statusColor[status]}`
-                          : (isCheckIn || isCheckOut)
-                            ? "inset 0 0 0 1px var(--danger)"
-                            : undefined,
+                        boxShadow: isDragHighlight
+                          ? "inset 0 0 0 2px gray"
+                          : isHovered
+                            ? `inset 0 0 0 1px ${statusColor[status]}`
+                            : (hasCellTint && markerAccent)
+                              ? `inset 0 0 0 1px ${markerAccent}`
+                              : undefined,
                         perspective: "400px",
                         zIndex: isHovered ? 40 : 1,
                       }}
-                      onClick={() => onRoomClick(room, timelineDayOffset, status)}
-                      onMouseEnter={() => setHoveredCell({ room: room.number, day: timelineDayOffset })}
+                      onClick={() => {
+                        // Only fire click if not a drag
+                        if (!dragRef.current) {
+                          onRoomClick(room, timelineDayOffset, status);
+                        }
+                      }}
+                      onMouseDown={(e) => {
+                        if (e.button !== 0) return;
+                        dragRef.current = { room, startDay: timelineDayOffset };
+                        setDragRange({ roomNumber: room.number, startDay: timelineDayOffset, endDay: timelineDayOffset });
+                      }}
+                      onMouseEnter={() => {
+                        setHoveredCell({ room: room.number, day: timelineDayOffset });
+                        if (dragRef.current && dragRef.current.room.number === room.number) {
+                          setDragRange((prev) =>
+                            prev ? { ...prev, endDay: timelineDayOffset } : null,
+                          );
+                        }
+                      }}
                       onMouseLeave={() => setHoveredCell(null)}
                     >
-                      {/* Check-in / Check-out badge */}
-                      {(isCheckIn || isCheckOut) && (
-                        <div className="flex h-full items-center justify-center">
-                          <span
-                            className="rounded px-1 text-[0.5rem] font-bold leading-tight"
-                            style={{
-                              backgroundColor: "var(--danger)",
-                              color: "#fff",
-                              letterSpacing: "0.03em",
-                            }}
+                      {/* Check-in / Check-out / Start / End badges */}
+                      {(() => {
+                        // Build compact pills per status type.
+                        // OUT/END are filled; IN/START are inverted (white bg with accent text).
+                        type Pill = { label: string; accent: string; inverted?: boolean };
+                        const pills: Pill[] = [];
+
+                        // Single-day entries: both boundary markers
+                        if (isSingleDay) {
+                          if (singleDayStatus === "occupied") {
+                            pills.push({ label: "OUT", accent: "var(--danger)" });
+                            pills.push({ label: "IN", accent: "var(--danger)", inverted: true });
+                          } else if (singleDayStatus === "maintenance") {
+                            pills.push({ label: "END", accent: "var(--warning)" });
+                            pills.push({ label: "START", accent: "var(--warning)", inverted: true });
+                          } else if (singleDayStatus === "cleaning") {
+                            pills.push({ label: "END", accent: "var(--accent-cyan)" });
+                            pills.push({ label: "START", accent: "var(--accent-cyan)", inverted: true });
+                          }
+                        }
+
+                        // Multi-day occupied
+                        if (isOccupiedCheckOut && isOccupiedCheckIn) {
+                          pills.push({ label: "OUT", accent: "var(--danger)" });
+                          pills.push({ label: "IN", accent: "var(--danger)", inverted: true });
+                        } else if (isOccupiedCheckOut) {
+                          pills.push({ label: "OUT", accent: "var(--danger)" });
+                        } else if (isOccupiedCheckIn) {
+                          pills.push({ label: "IN", accent: "var(--danger)", inverted: true });
+                        }
+
+                        // Multi-day maintenance
+                        if (isMaintEnd && isMaintStart) {
+                          pills.push({ label: "END", accent: "var(--warning)" });
+                          pills.push({ label: "START", accent: "var(--warning)", inverted: true });
+                        } else if (isMaintEnd) {
+                          pills.push({ label: "END", accent: "var(--warning)" });
+                        } else if (isMaintStart) {
+                          pills.push({ label: "START", accent: "var(--warning)", inverted: true });
+                        }
+
+                        // Multi-day cleaning
+                        if (isCleanEnd && isCleanStart) {
+                          pills.push({ label: "END", accent: "var(--accent-cyan)" });
+                          pills.push({ label: "START", accent: "var(--accent-cyan)", inverted: true });
+                        } else if (isCleanEnd) {
+                          pills.push({ label: "END", accent: "var(--accent-cyan)" });
+                        } else if (isCleanStart) {
+                          pills.push({ label: "START", accent: "var(--accent-cyan)", inverted: true });
+                        }
+
+                        if (pills.length === 0) return null;
+
+                        return (
+                          <div
+                            className="flex h-full w-full flex-col items-center justify-center"
+                            style={{ gap: pillSizing.gap }}
                           >
-                            {isCheckIn ? "IN" : "OUT"}
-                          </span>
-                        </div>
-                      )}
+                            {pills.map((p, i) => (
+                              <span
+                                key={i}
+                                className="inline-flex items-center justify-center rounded font-bold leading-none whitespace-nowrap text-center"
+                                style={{
+                                  width: pillSizing.width,
+                                  fontSize: pillSizing.fontSize,
+                                  padding: `${pillSizing.paddingY} ${pillSizing.paddingX}`,
+                                  backgroundColor: p.inverted ? "#fff" : p.accent,
+                                  color: p.inverted ? p.accent : "#fff",
+                                  border: p.inverted ? `1px solid ${p.accent}` : "1px solid transparent",
+                                  letterSpacing: "0.02em",
+                                }}
+                              >
+                                {p.label}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
                       {isHovered && (
                         <div
                           className={`absolute bottom-full z-50 mb-2 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-2 shadow-lg ${tooltipPositionClass}`}
@@ -466,16 +646,95 @@ export function Timeline({ rooms, timeline, schedules, timelineStartOffset, onRo
                               </span>
                             </div>
                           ) : null}
-                          {(isCheckIn || isCheckOut) && (
+                          {(isOccupiedCheckIn || isOccupiedCheckOut) && !isSingleDay && (
+                            <div className="mt-1 flex items-center gap-1.5">
+                              {isOccupiedCheckOut && (
+                                <span
+                                  className="rounded px-1 py-0.5 text-[0.55rem] font-bold leading-none text-white"
+                                  style={{ backgroundColor: "var(--danger)" }}
+                                >
+                                  CHECK-OUT
+                                </span>
+                              )}
+                              {isOccupiedCheckIn && (
+                                <span
+                                  className="rounded px-1 py-0.5 text-[0.55rem] font-bold leading-none"
+                                  style={{
+                                    backgroundColor: "#fff",
+                                    color: "var(--danger)",
+                                    border: "1px solid var(--danger)",
+                                  }}
+                                >
+                                  CHECK-IN
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {(isMaintStart || isMaintEnd) && !isSingleDay && (
+                            <div className="mt-1 flex items-center gap-1.5">
+                              {isMaintEnd && (
+                                <span
+                                  className="rounded px-1 py-0.5 text-[0.55rem] font-bold leading-none text-white"
+                                  style={{ backgroundColor: "var(--warning)" }}
+                                >
+                                  MAINT. END
+                                </span>
+                              )}
+                              {isMaintStart && (
+                                <span
+                                  className="rounded px-1 py-0.5 text-[0.55rem] font-bold leading-none"
+                                  style={{
+                                    backgroundColor: "#fff",
+                                    color: "var(--warning)",
+                                    border: "1px solid var(--warning)",
+                                  }}
+                                >
+                                  MAINT. START
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {(isCleanStart || isCleanEnd) && !isSingleDay && (
+                            <div className="mt-1 flex items-center gap-1.5">
+                              {isCleanEnd && (
+                                <span
+                                  className="rounded px-1 py-0.5 text-[0.55rem] font-bold leading-none text-white"
+                                  style={{ backgroundColor: "var(--accent-cyan)" }}
+                                >
+                                  CLEAN END
+                                </span>
+                              )}
+                              {isCleanStart && (
+                                <span
+                                  className="rounded px-1 py-0.5 text-[0.55rem] font-bold leading-none"
+                                  style={{
+                                    backgroundColor: "#fff",
+                                    color: "var(--accent-cyan)",
+                                    border: "1px solid var(--accent-cyan)",
+                                  }}
+                                >
+                                  CLEAN START
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {isSingleDay && (
                             <div className="mt-1 flex items-center gap-1.5">
                               <span
                                 className="rounded px-1 py-0.5 text-[0.55rem] font-bold leading-none text-white"
-                                style={{
-                                  backgroundColor: "var(--danger)",
-                                }}
+                                style={{ backgroundColor: markerAccent ?? "var(--danger)" }}
                               >
-                                {isCheckIn ? "CHECK-IN" : "CHECK-OUT"}
+                                {singleDayStatus === "occupied" ? "CHECK-IN / CHECK-OUT" : singleDayStatus === "maintenance" ? "MAINT. START / END" : singleDayStatus === "cleaning" ? "CLEAN START / END" : "START / END"}
                               </span>
+                              {singleDayEntry?.checkoutTime ? (
+                                <span className="text-[0.6rem] text-[var(--text-secondary)]">
+                                  Out at{" "}
+                                  {(() => {
+                                    const [h] = singleDayEntry.checkoutTime.split(":").map(Number);
+                                    return h === 0 ? "12:00 AM" : h < 12 ? `${h}:00 AM` : h === 12 ? "12:00 PM" : `${h - 12}:00 PM`;
+                                  })()}
+                                </span>
+                              ) : null}
                             </div>
                           )}
                           <div

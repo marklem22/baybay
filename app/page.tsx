@@ -46,6 +46,8 @@ export default function RoomsPage() {
   const [selectedDateRaw, setSelectedDateRaw] = useState<string | undefined>(undefined);
   const [selectedDayStatus, setSelectedDayStatus] = useState<RoomStatus | undefined>(undefined);
   const [selectedDayEntry, setSelectedDayEntry] = useState<StatusEntry | null>(null);
+  const [prefillRangeStart, setPrefillRangeStart] = useState<string | undefined>(undefined);
+  const [prefillRangeEnd, setPrefillRangeEnd] = useState<string | undefined>(undefined);
   const [roomTypeOptions, setRoomTypeOptions] = useState<RoomTypeRecord[]>([]);
   const [filters, setFilters] = useState<FiltersState>({
     startDate: "",
@@ -254,6 +256,22 @@ export default function RoomsPage() {
     const roomSchedule = schedules[room.number] ?? [];
     const dayEntry = getScheduleEntryForDate(roomSchedule, date);
     setSelectedDayEntry(dayEntry);
+    setPrefillRangeStart(undefined);
+    setPrefillRangeEnd(undefined);
+  };
+
+  const handleTimelineRangeSelect = (room: Room, startDayIndex: number, endDayIndex: number) => {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() + startDayIndex);
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + endDayIndex);
+    setSelectedRoom(room);
+    setSelectedDate(undefined);
+    setSelectedDateRaw(undefined);
+    setSelectedDayStatus(undefined);
+    setSelectedDayEntry(null);
+    setPrefillRangeStart(formatDateInput(startDate));
+    setPrefillRangeEnd(formatDateInput(endDate));
   };
 
   return (
@@ -286,6 +304,7 @@ export default function RoomsPage() {
         schedules={schedules}
         timelineStartOffset={timelineStartOffset}
         onRoomClick={handleTimelineRoomClick}
+        onRangeSelect={handleTimelineRangeSelect}
       />
 
       <RoomModal
@@ -297,6 +316,8 @@ export default function RoomsPage() {
           setSelectedDateRaw(undefined);
           setSelectedDayStatus(undefined);
           setSelectedDayEntry(null);
+          setPrefillRangeStart(undefined);
+          setPrefillRangeEnd(undefined);
         }}
         selectedDate={selectedDate}
         selectedDateRaw={selectedDateRaw}
@@ -304,6 +325,8 @@ export default function RoomsPage() {
         selectedDayEntry={selectedDayEntry}
         schedule={selectedRoom ? schedules[selectedRoom.number] ?? [] : []}
         onUpdateSchedule={handleUpdateSchedule}
+        prefillRangeStart={prefillRangeStart}
+        prefillRangeEnd={prefillRangeEnd}
       />
     </div>
   );

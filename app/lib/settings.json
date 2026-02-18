@@ -1,0 +1,165 @@
+{
+  "activePreset": "default-light",
+  "presets": [
+    {
+      "id": "default-dark",
+      "name": "Default Dark",
+      "isBuiltIn": true,
+      "colors": {
+        "bgPrimary": "#0c0e14",
+        "bgSecondary": "#13151d",
+        "bgCard": "#1a1d28",
+        "accentBlue": "#6366f1",
+        "accentPurple": "#8b5cf6",
+        "accentCyan": "#06b6d4",
+        "success": "#22c55e",
+        "warning": "#eab308",
+        "danger": "#ef4444",
+        "textPrimary": "#f1f5f9",
+        "textSecondary": "#94a3b8",
+        "textMuted": "#64748b"
+      },
+      "font": "Inter"
+    },
+    {
+      "id": "default-light",
+      "name": "Default Light",
+      "isBuiltIn": true,
+      "colors": {
+        "bgPrimary": "#f8fafc",
+        "bgSecondary": "#ffffff",
+        "bgCard": "#f1f5f9",
+        "accentBlue": "#6366f1",
+        "accentPurple": "#7c3aed",
+        "accentCyan": "#0891b2",
+        "success": "#16a34a",
+        "warning": "#ca8a04",
+        "danger": "#dc2626",
+        "textPrimary": "#0f172a",
+        "textSecondary": "#475569",
+        "textMuted": "#64748b"
+      },
+      "font": "Inter"
+    },
+    {
+      "id": "nordic-light",
+      "name": "Nordic Light",
+      "isBuiltIn": true,
+      "colors": {
+        "bgPrimary": "#f4f7fb",
+        "bgSecondary": "#ffffff",
+        "bgCard": "#eaf0f8",
+        "accentBlue": "#2563eb",
+        "accentPurple": "#7c3aed",
+        "accentCyan": "#0891b2",
+        "success": "#16a34a",
+        "warning": "#ca8a04",
+        "danger": "#dc2626",
+        "textPrimary": "#0b1b34",
+        "textSecondary": "#365173",
+        "textMuted": "#5e7290"
+      },
+      "font": "Inter"
+    },
+    {
+      "id": "warm-sand",
+      "name": "Warm Sand",
+      "isBuiltIn": true,
+      "colors": {
+        "bgPrimary": "#fff9ef",
+        "bgSecondary": "#fffcf6",
+        "bgCard": "#f7f0e2",
+        "accentBlue": "#0ea5e9",
+        "accentPurple": "#a855f7",
+        "accentCyan": "#0d9488",
+        "success": "#15803d",
+        "warning": "#b45309",
+        "danger": "#dc2626",
+        "textPrimary": "#2f2516",
+        "textSecondary": "#6b5a40",
+        "textMuted": "#8a7558"
+      },
+      "font": "Inter"
+    },
+    {
+      "id": "ocean-breeze",
+      "name": "Ocean Breeze",
+      "isBuiltIn": true,
+      "colors": {
+        "bgPrimary": "#0a1628",
+        "bgSecondary": "#0f1f3d",
+        "bgCard": "#162a4a",
+        "accentBlue": "#3b82f6",
+        "accentPurple": "#6366f1",
+        "accentCyan": "#22d3ee",
+        "success": "#34d399",
+        "warning": "#fbbf24",
+        "danger": "#f87171",
+        "textPrimary": "#e0f2fe",
+        "textSecondary": "#7dd3fc",
+        "textMuted": "#38bdf8"
+      },
+      "font": "Inter"
+    },
+    {
+      "id": "rose-garden",
+      "name": "Rose Garden",
+      "isBuiltIn": true,
+      "colors": {
+        "bgPrimary": "#1a0a14",
+        "bgSecondary": "#2d1224",
+        "bgCard": "#3d1a32",
+        "accentBlue": "#ec4899",
+        "accentPurple": "#a855f7",
+        "accentCyan": "#f472b6",
+        "success": "#4ade80",
+        "warning": "#fbbf24",
+        "danger": "#fb7185",
+        "textPrimary": "#fce7f3",
+        "textSecondary": "#f9a8d4",
+        "textMuted": "#ec4899"
+      },
+      "font": "DM Sans"
+    },
+    {
+      "id": "forest-green",
+      "name": "Forest",
+      "isBuiltIn": true,
+      "colors": {
+        "bgPrimary": "#0a1410",
+        "bgSecondary": "#0f1f17",
+        "bgCard": "#162a1f",
+        "accentBlue": "#10b981",
+        "accentPurple": "#34d399",
+        "accentCyan": "#2dd4bf",
+        "success": "#4ade80",
+        "warning": "#fbbf24",
+        "danger": "#f87171",
+        "textPrimary": "#ecfdf5",
+        "textSecondary": "#86efac",
+        "textMuted": "#4ade80"
+      },
+      "font": "Space Grotesk"
+    },
+    {
+      "id": "sunset-warm",
+      "name": "Sunset",
+      "isBuiltIn": true,
+      "colors": {
+        "bgPrimary": "#1c1410",
+        "bgSecondary": "#2a1e16",
+        "bgCard": "#3a2a1e",
+        "accentBlue": "#f59e0b",
+        "accentPurple": "#f97316",
+        "accentCyan": "#fb923c",
+        "success": "#84cc16",
+        "warning": "#eab308",
+        "danger": "#ef4444",
+        "textPrimary": "#fef3c7",
+        "textSecondary": "#fcd34d",
+        "textMuted": "#f59e0b"
+      },
+      "font": "Poppins"
+    }
+  ]
+}
